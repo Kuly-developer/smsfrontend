@@ -1,0 +1,84 @@
+<div class="products-page">
+  <!-- Header -->
+  <div class="products-header">
+    <h1>All Products</h1>
+    <p>Discover amazing products from our sellers</p>
+    
+    <!-- Total Products Count -->
+    <div class="total-products-count">
+      <mat-icon>inventory_2</mat-icon>
+      <span>Total Products: {{ products.length }}</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div *ngIf="!loading" class="products-grid">
+    <div *ngFor="let product of products" class="product-card">
+
+      <!-- Product Image -->
+      <div class="product-image">
+        <img
+          [src]="product.image_url || 'assets/placeholder-product.jpg'"
+          [alt]="product.name"
+          (error)="product.image_url = 'assets/placeholder-product.jpg'">
+      </div>
+
+      <!-- Product Info -->
+      <div class="product-info">
+        <h3 class="product-title">{{ product.name }}</h3>
+        <p class="product-description">{{ product.description | slice:0:100 }}{{ product.description.length > 100 ? '...' : '' }}</p>
+
+        <!-- Rating -->
+        <div class="product-rating">
+          <span class="stars">★★★★★</span>
+          <span class="rating-count">(12)</span>
+        </div>
+
+        <!-- Price -->
+        <div class="product-price">
+          ${{ product.price }}
+        </div>
+
+        <!-- Stock -->
+        <div class="product-stock" [class.low-stock]="product.stock < 10">
+          {{ product.stock > 0 ? (product.stock + ' in stock') : 'Out of stock' }}
+        </div>
+
+        <!-- Seller Info -->
+        <div class="seller-info">
+          <div class="seller-avatar">
+            {{ getSellerInitials(product.salesperson_name) }}
+          </div>
+          <div class="seller-details">
+            <span class="seller-name">Sold by: {{ product.salesperson_name || 'Seller ' + product.salesperson_id }}</span>
+          </div>
+        </div>
+
+        <!-- Delete Button -->
+        <div class="admin-actions">
+          <button
+            class="delete-btn"
+            (click)="deleteProduct(product.id)"
+            [disabled]="deletingProductId === product.id">
+            <mat-icon *ngIf="deletingProductId !== product.id">delete</mat-icon>
+            <div *ngIf="deletingProductId === product.id" class="delete-spinner"></div>
+            {{ deletingProductId === product.id ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && products.length === 0" class="empty-state">
+    <mat-icon>inventory_2</mat-icon>
+    <h3>No Products Available</h3>
+    <p>Check back later for new products</p>
+  </div>
+</div>

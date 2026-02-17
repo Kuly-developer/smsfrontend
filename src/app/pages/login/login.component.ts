@@ -11,6 +11,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 export class LoginComponent {
   loginForm: FormGroup;
   errorMessage: string = '';
+  hidePassword = true; // 👈 initially hidden
 
   constructor(
     private fb: FormBuilder,
@@ -21,6 +22,10 @@ export class LoginComponent {
       username: ['', Validators.required],
       password: ['', Validators.required],
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.hidePassword = !this.hidePassword;
   }
 
   onSubmit(): void {

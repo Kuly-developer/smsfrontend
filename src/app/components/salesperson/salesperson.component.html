@@ -1,56 +1,56 @@
 <div class="dashboard-container">
-  <aside class="sidebar">
-    <div class="logo">salesperson</div>
-    <nav>
-      <ul>
-        <li
-          [class.active]="activeMenu === 'create-orders'"
-          (click)="setActive('create-orders')"
-        >
-          <i class="fas fa-cart-plus"></i> Create Orders
-        </li>
-
-        <li
-          [class.active]="activeMenu === 'manage-product'"
-          (click)="navigateToManageProduct(); setActive('manage-product')"
-        >
-          <i class="fas fa-cog"></i> Manage Product
-        </li>
-
-        <li
-          [class.active]="activeMenu === 'manage-customers'"
-          (click)="setActive('manage-customers')"
-        >
-          <i class="fas fa-users"></i> Manage Own Customers
-        </li>
-
-        <li
-          [class.active]="activeMenu === 'update-stock'"
-          (click)="setActive('update-stock')"
-        >
-          <i class="fas fa-boxes"></i> Update Product Stock
-        </li>
-
-        <li
-          [class.active]="activeMenu === 'view-orders'"
-          (click)="setActive('view-orders')"
-        >
-          <i class="fas fa-receipt"></i> View Own Orders
-        </li>
-      </ul>
-    </nav>
-  </aside>
-
   <main class="main-content">
     <div class="header">
-      <h2>{{ getActiveMenuTitle() }}</h2>
-      <div *ngIf="activeMenu === 'update-stock'" class="button-group">
-        <button class="btn btn-primary" (click)="navigateToCreateProduct()">
-          <i class="fas fa-plus"></i> Create Product
-        </button>
-        <button class="btn btn-secondary" (click)="navigateToManageProduct()">
-          <i class="fas fa-cogs"></i> Manage Products
-        </button>
+      <h2>Manage Products</h2>
+      <div class="button-group">
+        <!-- Low Stock Alert Badge -->
+        <div *ngIf="lowStockCount > 0" class="alert-badge" (click)="showLowStockAlert()">
+          {{ lowStockCount }} 
+        </div>
+      </div>
+    </div>
+
+    <!-- Low Stock Alert Banner -->
+    <div *ngIf="showAlert && lowStockProducts.length > 0" class="alert-banner warning">
+      <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-message">
+          <strong>Your Products - Low Stock Alert!</strong>
+          <span>The following products from your inventory have low stock (≤ 2):</span>
+          <ul>
+            <li *ngFor="let product of lowStockProducts" [class.critical]="product.stock === 0">
+              {{ product.name }} - Stock: {{ product.stock }}
+              <span *ngIf="product.stock === 0" class="out-of-stock-label">(Out of Stock)</span>
+              <span *ngIf="product.stock === 1" class="very-low-label">(Very Low)</span>
+              <span *ngIf="product.stock === 2" class="low-label">(Low)</span>
+            </li>
+          </ul>
+        </div>
+        <button class="alert-close" (click)="hideAlert()">×</button>
+      </div>
+    </div>
+
+    <!-- No Products Message -->
+    <div *ngIf="lowStockCount === 0" class="no-products-message">
+      <div class="message-content">
+        <span class="message-icon">✅</span>
+        <div class="message-text">
+          <h3></h3>
+          <p></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-redirect notice -->
+    <div class="redirect-notice">
+      <div class="notice-content">
+        <span class="notice-icon">🔄</span>
+        <div class="notice-text">
+          <h3>Redirecting to Product Management</h3>
+          <p>You will be automatically redirected to manage your products...</p>
+          <p class="redirect-timer">Redirecting in {{ countdown }} seconds</p>
+          <button class="btn-primary" (click)="navigateNow()">Go Now</button>
+        </div>
       </div>
     </div>
 

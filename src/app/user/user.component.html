@@ -99,6 +99,11 @@
         </div>
 
         <div class="form-group">
+          <label>Role</label>
+          <div class="current-role">{{ getCurrentUserRole(editingUser) }}</div>
+        </div>
+
+        <div class="form-group">
           <label>New Password (Optional)</label>
           <input formControlName="password" type="password" placeholder="Leave blank to keep current" />
         </div>
@@ -120,9 +125,10 @@
         <h3>Total Users</h3>
         <p>{{ users.length }}</p>
       </div>
-      <div class="card" *ngIf="roles.length > 0">
-        <h3>Admin Users</h3>
-        <p>{{ getAdminUserCount() }}</p>
+     
+      <div class="card">
+        <h3>Salesperson Users</h3>
+        <p>{{ getSalespersonUserCount() }}</p>
       </div>
     </div>
   </div>
@@ -144,9 +150,9 @@
           <td>{{ user.fullName || '-' }}</td>
           <td>{{ user.email || '-' }}</td>
           <td>
-            <select #roleSelect [value]="user.role?.id" (change)="onRoleChange(user, roleSelect.value)">
-              <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
-            </select>
+            <span class="role-badge" [class]="getRoleBadgeClass(user)">
+              {{ getCurrentUserRole(user) }}
+            </span>
           </td>
           <td class="actions">
             <button class="btn btn-secondary" (click)="onEditUser(user)">Edit</button>

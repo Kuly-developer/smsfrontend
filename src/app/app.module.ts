@@ -24,6 +24,15 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 
+// ADD THESE MISSING MODULES FOR REPORTS
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+
+// ADD THESE MISSING MODULES FOR PERMISSIONS COMPONENT
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+
 // Components
 import { LoginComponent } from './pages/login/login.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
@@ -37,6 +46,17 @@ import { SalespersonComponent } from './components/salesperson/salesperson.compo
 import { AccountantComponent } from './components/accountant/accountant.component';
 import { ManageProductComponent } from './components/manage-product/manage-product.component';
 import { CustomerDashboardComponent } from './customer-dashboard/customer-dashboard.component';
+import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
+import { PaymentCancelComponent } from './components/payment-cancel/payment-cancel.component';
+import { InvoiceComponent } from './components/invoice/invoice.component';
+import { ProductsComponent } from './components/products/products.component';
+import { OrdersComponent } from './components/orders/orders.component';
+
+// ADD REPORTS COMPONENT
+import { ReportsComponent } from './reports/reports.component';
+
+// ADD PERMISSIONS COMPONENT
+import { PermissionsComponent } from './permissions/permissions.component';
 
 @NgModule({
   declarations: [
@@ -52,7 +72,14 @@ import { CustomerDashboardComponent } from './customer-dashboard/customer-dashbo
     SalespersonComponent,
     AccountantComponent,
     ManageProductComponent,
-    CustomerDashboardComponent
+    CustomerDashboardComponent,
+    PaymentSuccessComponent,
+    PaymentCancelComponent,
+    ProductsComponent,
+    OrdersComponent,
+    ReportsComponent,
+    PermissionsComponent, // Add PermissionsComponent here
+    // Remove InvoiceComponent from declarations array
   ],
   imports: [
     BrowserModule,
@@ -76,7 +103,19 @@ import { CustomerDashboardComponent } from './customer-dashboard/customer-dashbo
     MatSelectModule,
     MatTableModule,
     MatPaginatorModule,
-    MatSortModule
+    MatSortModule,
+
+    // ADD THESE MATERIAL MODULES FOR REPORTS
+    MatProgressSpinnerModule, // For mat-spinner
+    MatTabsModule,           // For future tabbed reports
+    MatDatepickerModule,     // For date range pickers
+    MatNativeDateModule,     // For datepicker
+
+    // ADD THIS FOR PERMISSIONS COMPONENT
+    MatSlideToggleModule,    // For mat-slide-toggle
+
+    // Import standalone components here
+    InvoiceComponent
   ],
   providers: [
     {

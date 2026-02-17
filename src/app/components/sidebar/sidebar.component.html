@@ -40,7 +40,7 @@
       <button mat-icon-button (click)="drawer.toggle()">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="toolbar-title">Dashboard Overview</span>
+      <span class="toolbar-title">{{ getPageTitle() }}</span>
       <span class="spacer"></span>
       <button mat-icon-button class="notification-btn">
         <mat-icon>notifications</mat-icon>
@@ -53,9 +53,15 @@
     </mat-toolbar>
 
     <div class="colorful-content">
-      <h2>Welcome back, Administrator</h2>
-      <p>Here's your current system overview</p>
-      <!-- Content would go here -->
+      <!-- Router outlet for displaying different components -->
+      <router-outlet></router-outlet>
+
+      <!-- Default dashboard content (shown only on home route) -->
+      <div *ngIf="isDashboard()">
+        <h2>Welcome back, Administrator</h2>
+        <p>Here's your current system overview</p>
+        <!-- Your existing dashboard content here -->
+      </div>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

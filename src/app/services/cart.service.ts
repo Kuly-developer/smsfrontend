@@ -1,7 +1,6 @@
-// services/cart.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { AuthService } from './auth.service';
 import { CartItem } from '../models/cart-item.model';
 
@@ -10,89 +9,92 @@ import { CartItem } from '../models/cart-item.model';
 })
 export class CartService {
   private apiUrl = 'http://localhost:8889/api';
-  private cartItems: CartItem[] = [];
   private cartSubject = new BehaviorSubject<CartItem[]>([]);
   public cart$ = this.cartSubject.asObservable();
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) { }
-
-  private getHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
-  }
+  ) {}
 
   // Fetch cart from backend
   fetchCart(): void {
     const customerId = this.authService.getCustomerId();
-    if (!customerId) return;
+    if (!customerId) {
+      this.cartSubject.next([]);
+      return;
+    }
 
-    this.http.get<CartItem[]>(`${this.apiUrl}/cart/${customerId}`, {
-      headers: this.getHeaders()
-    }).subscribe({
-      next: (res) => {
-        this.cartItems = res;
-        this.cartSubject.next([...this.cartItems]);
+    this.http.get<CartItem[]>(`${this.apiUrl}/cart/${customerId}`).subscribe({
+      next: (cartItems) => {
+        console.log('🛒 Fetched cart items:', cartItems);
+        this.cartSubject.next(cartItems);
       },
-      error: (err) => console.error('Error fetching cart:', err)
+      error: (err) => {
+        console.error('❌ Error fetching cart:', err);
+        this.cartSubject.next([]);
+      }
     });
   }
 
   // Add item to cart
   addToCart(item: CartItem): Observable<any> {
-    const customerId = this.authService.getCustomerId();
-    if (!customerId) {
-      throw new Error('User not authenticated');
-    }
-
-    const payload = {
-      customerId,
-      productId: item.productId,
-      quantity: item.quantity || 1
-    };
-
-    return this.http.post(`${this.apiUrl}/cart`, payload, {
-      headers: this.getHeaders()
-    });
+    return this.http.post(`${this.apiUrl}/cart`, item);
   }
 
-  // Update item quantity
-  updateQuantity(itemId: number, quantity: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/cart/${itemId}`, { quantity }, {
-      headers: this.getHeaders()
-    });
+  // Update quantity
+  updateQuantity(cartItemId: number, quantity: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/cart/${cartItemId}`, { quantity });
   }
 
   // Remove item from cart
-  removeFromCart(itemId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/cart/${itemId}`, {
-      headers: this.getHeaders()
-    });
+  removeFromCart(cartItemId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/cart/${cartItemId}`);
   }
 
-  // Clear cart (after checkout)
-  clearCart(): void {
-    this.cartItems = [];
-    this.cartSubject.next([]);
+  // Clear entire cart - FIXED ENDPOINT
+  clearCart(): Observable<any> {
+    const customerId = this.authService.getCustomerId();
+    if (!customerId) {
+      // FIX: Return proper Observable with next() call
+      return new Observable(observer => {
+        observer.next({}); // Provide empty object as value
+        observer.complete();
+      });
+    }
+
+    console.log('🗑️ Clearing cart for customer:', customerId);
+    // FIX: Changed from /cart/clear/:customerId to /cart/customer/:customerId
+    return this.http.delete(`${this.apiUrl}/cart/customer/${customerId}`);
   }
 
-  // Get current cart items
-  getCartItems(): CartItem[] {
-    return [...this.cartItems];
+  // Clear local cart state immediately
+  clearLocalCart(): void {
+    console.log('🗑️ Clearing local cart state');
+    this.cartSubject.next([]); // This is correct - empty array
   }
 
-  // Calculate total payment
+  // Calculate total - FIXED: Handle possible undefined price
   calculateTotal(): number {
-    return this.cartItems.reduce(
-      (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-      0
-    );
+    const cartItems = this.cartSubject.value;
+    return cartItems.reduce((total, item) => {
+      const price = item.price || 0; // Handle undefined price
+      const quantity = item.quantity || 1;
+      return total + (price * quantity);
+    }, 0);
   }
 
-  // Get cart item count
+  // Get item count - FIXED: Handle possible undefined quantity
   getItemCount(): number {
-    return this.cartItems.reduce((count, item) => count + (item.quantity || 1), 0);
+    const cartItems = this.cartSubject.value;
+    return cartItems.reduce((count, item) => {
+      const quantity = item.quantity || 1;
+      return count + quantity;
+    }, 0);
+  }
+
+  // Get current cart
+  getCart(): CartItem[] {
+    return this.cartSubject.value;
   }
 }

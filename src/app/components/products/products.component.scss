@@ -1,0 +1,273 @@
+.products-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.products-header {
+  text-align: center;
+  margin-bottom: 30px;
+
+  h1 {
+    color: #232f3e;
+    margin-bottom: 8px;
+    font-size: 28px;
+  }
+
+  p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+}
+
+.total-products-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e9ecef;
+  font-weight: 500;
+  color: #495057;
+  
+  mat-icon {
+    color: #ff9900;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Rest of your existing SCSS styles remain the same...
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #ff9900;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 0 10px;
+}
+
+.product-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+.product-image {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 16px;
+  text-align: center;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #0f1111;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-description {
+  color: #565959;
+  font-size: 14px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+
+  .stars {
+    color: #ffa41c;
+    font-size: 14px;
+  }
+
+  .rating-count {
+    color: #007185;
+    font-size: 14px;
+    margin-left: 4px;
+  }
+}
+
+.product-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #b12704;
+  margin-bottom: 8px;
+}
+
+.product-stock {
+  font-size: 14px;
+  color: #007600;
+  margin-bottom: 12px;
+
+  &.low-stock {
+    color: #b12704;
+  }
+}
+
+.seller-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-top: 1px solid #f0f0f0;
+
+  .seller-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ff9900;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  .seller-details {
+    .seller-name {
+      font-size: 14px;
+      color: #565959;
+    }
+  }
+}
+
+.admin-actions {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+
+  .delete-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #c82333;
+      border-color: #bd2130;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .delete-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    color: #ccc;
+  }
+
+  h3 {
+    margin-bottom: 8px;
+    color: #333;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    padding: 0;
+  }
+
+  .products-page {
+    padding: 15px;
+  }
+
+  .total-products-count {
+    font-size: 14px;
+    padding: 6px 12px;
+    
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

@@ -1,0 +1,127 @@
+<div class="app-container">
+  <!-- Header with User Info -->
+  <div class="header">
+    <h1>📄 Invoice Management</h1>
+    <div class="user-info">
+      <div class="user-avatar">{{ getUserInitials() }}</div>
+      <div>
+        <div>{{ userName }}</div>
+        <div class="customer-id">Customer ID: {{ customerCode }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards - Remove paid/pending counts -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-icon total">📊</div>
+      <div class="stat-info">
+        <h3>Total Invoices</h3>
+        <p>{{ invoices.length }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Table -->
+  <div class="invoice-container">
+    <div class="table-header">
+      <h2>Your Invoices</h2>
+      <div class="search-box">
+        <span>🔍</span>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="filterInvoices()"
+          placeholder="Search invoices..." />
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Invoice Number</th>
+          <th>Price</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let invoice of displayedInvoices">
+          <td>{{ invoice.id }}</td>
+          <td>{{ invoice.invoice_number }}</td>
+          <td>${{ invoice.total }}</td>
+          <td>{{ formatDate(invoice.created_at) }}</td>
+          <td>
+            
+            <button class="btn btn-info" (click)="printInvoice(invoice)" style="margin-left: 5px;">
+              🖨️ Print
+            </button>
+            <button class="btn btn-danger" (click)="openDeleteModal(invoice)" style="margin-left: 5px;">
+              🗑️ Delete
+            </button>
+          </td>
+        </tr>
+
+        <!-- Empty State -->
+        <tr *ngIf="displayedInvoices.length === 0">
+          <td colspan="5" class="empty-state">
+            <div>📄</div>
+            <div>No invoices found</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="filteredInvoices.length > itemsPerPage">
+      <div class="pagination-info">
+        Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ filteredInvoices.length }} invoices
+      </div>
+      <div class="pagination-controls">
+        <div
+          class="pagination-btn"
+          [class.disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)">
+          ◀
+        </div>
+
+        <div
+          *ngFor="let page of getPageNumbers()"
+          class="pagination-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </div>
+
+        <div
+          class="pagination-btn"
+          [class.disabled]="currentPage === getTotalPages()"
+          (click)="goToPage(currentPage + 1)">
+          ▶
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" [class.active]="showDeleteModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Deletion</div>
+      <button class="close-modal" (click)="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        Are you sure you want to delete invoice
+        <strong>{{ invoiceToDelete?.invoice_number }}</strong>?
+        This action cannot be undone.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" (click)="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete Invoice</button>
+    </div>
+  </div>
+</div>

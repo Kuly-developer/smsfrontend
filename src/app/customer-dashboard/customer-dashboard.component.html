@@ -1,15 +1,29 @@
 <div class="dashboard-container">
   <!-- Header -->
   <header class="header">
-    <div class="logo">MyShop</div>
+    <div class="left-section">
+      <!-- 🔙 Back to Login Button -->
+      <button class="back-btn" (click)="goBackToLogin()">⬅ Back</button>
+      <div class="logo">MyShop</div>
+    </div>
 
     <div class="search-bar">
-      <input type="text" placeholder="Search products..." [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"/>
+      <input
+        type="text"
+        placeholder="Search products..."
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="onSearch()"
+      />
       <button (click)="onSearch()">🔍</button>
     </div>
 
     <div class="header-right">
-      <div class="profile">👤 Profile</div>
+      <!-- Invoice Button -->
+      <div class="invoice" (click)="goToInvoice()">
+        🧾 Invoice
+      </div>
+
+      <div class="profile"></div>
       <div class="cart" (click)="toggleCart()">
         🛒 Cart <span class="cart-count">{{ cart.length }}</span>
       </div>
@@ -24,15 +38,26 @@
         <h3>{{ product.name }}</h3>
         <p class="desc">{{ product.description }}</p>
         <p class="price">Price: {{ product.price | currency }}</p>
-        <p class="stock">Stock: {{ product.stock }}</p>
-        <button (click)="addToCart(product)">Add to Cart</button>
+        <p class="stock" [class.out-of-stock]="product.stock === 0">
+          {{ product.stock === 0 ? 'Out of Stock' : 'Stock: ' + product.stock }}
+        </p>
+
+        <button 
+          (click)="addToCart(product)" 
+          [disabled]="product.stock === 0"
+          [class.disabled]="product.stock === 0">
+          {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+        </button>
       </div>
     </div>
 
     <!-- Cart Panel -->
     <div class="cart-panel" *ngIf="cartVisible">
       <h2>Your Cart</h2>
-      <ul>
+      <div *ngIf="cart.length === 0" class="empty-cart">
+        <p>Your cart is empty</p>
+      </div>
+      <ul *ngIf="cart.length > 0">
         <li *ngFor="let item of cart">
           <img [src]="item.image_url" alt="{{ item.name }}" />
           <div class="item-details">
@@ -41,16 +66,66 @@
             <div class="quantity-controls">
               <button (click)="decreaseQuantity(item)">-</button>
               <span>{{ item.quantity }}</span>
-              <button (click)="increaseQuantity(item)">+</button>
+              <button 
+                (click)="increaseQuantity(item)" 
+                [disabled]="isMaxQuantityReached(item)"
+                [class.disabled]="isMaxQuantityReached(item)">
+                +
+              </button>
+            </div>
+            <!-- Show max quantity warning -->
+            <div *ngIf="isMaxQuantityReached(item)" class="max-quantity-warning">
+              Max quantity reached (Stock: {{ getProductStock(item.productId) }})
             </div>
           </div>
           <button class="remove" (click)="removeFromCart(item)">✖</button>
         </li>
       </ul>
-      <div class="checkout-section">
+      <div class="checkout-section" *ngIf="cart.length > 0">
         <p class="total">Total: {{ totalPayment | currency }}</p>
-        <button (click)="checkout()" [disabled]="cart.length === 0">Proceed to Checkout</button>
+        <button (click)="checkout()" [disabled]="cart.length === 0 || isProcessing">
+          {{ isProcessing ? 'Processing...' : 'Proceed to Checkout' }}
+        </button>
       </div>
     </div>
   </main>
+
+  <!-- Payment Status Modal -->
+  <div class="modal-overlay" *ngIf="showPaymentModal">
+    <div class="modal payment-modal">
+      <div class="modal-header">
+        <h3>Payment Status</h3>
+        <button class="close-btn" (click)="closeModal()" *ngIf="paymentStatus !== 'processing'">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Processing -->
+        <div *ngIf="paymentStatus === 'processing'" class="status processing">
+          <div class="spinner"></div>
+          <h4>Processing Your Payment</h4>
+          <p>Please wait while we verify your payment...</p>
+        </div>
+        
+        <!-- Success -->
+        <div *ngIf="paymentStatus === 'success'" class="status success">
+          <div class="icon">✅</div>
+          <h4>Payment Successful!</h4>
+          <p>Thank you for your purchase! Your cart has been cleared.</p>
+          <p>You can view your invoices in the Invoice section.</p>
+          <button class="btn-primary" (click)="closeModal()">Continue Shopping</button>
+        </div>
+        
+        <!-- Failed -->
+        <div *ngIf="paymentStatus === 'failed'" class="status failed">
+          <div class="icon">❌</div>
+          <h4>Payment Failed</h4>
+          <p>We couldn't verify your payment. Please try again.</p>
+          <div class="action-buttons">
+            <button class="btn-primary" (click)="closeModal()">Try Again</button>
+            <button class="btn-secondary" (click)="forceClearCart()">Clear Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

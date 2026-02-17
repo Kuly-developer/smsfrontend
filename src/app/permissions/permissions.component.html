@@ -1,1 +1,176 @@
-<p>permissions works!</p>
+<div class="permissions-container">
+  <div class="permissions-header">
+    <h1>Portal Access Permissions</h1>
+    <p>Manage customer access to different portal sections</p>
+  </div>
+
+  <div class="permissions-content">
+    <!-- Customers List -->
+    <div class="customers-list">
+      <h2>Customers</h2>
+
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Loading customers...</span>
+      </div>
+
+      <!-- Customers Grid -->
+      <div *ngIf="!loading" class="customers-grid">
+        <mat-card
+          *ngFor="let customer of customers"
+          class="customer-card"
+          [class.selected]="selectedCustomer?.id === customer.id"
+          (click)="selectCustomer(customer)">
+          <mat-card-content>
+            <div class="customer-info">
+              <h3>{{ customer.name }}</h3>
+              <p class="email">{{ customer.email }}</p>
+              <div class="access-status">
+                <span class="status-badge" [class.active]="getAccessStatus(customer) !== 'No Access'">
+                  {{ getAccessStatus(customer) }}
+                </span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && customers.length === 0" class="empty-state">
+        <mat-icon>people_outline</mat-icon>
+        <h3>No Customers Found</h3>
+        <p>There are no customers to manage permissions for.</p>
+      </div>
+    </div>
+
+    <!-- Permissions Management -->
+    <div class="permissions-management" *ngIf="selectedCustomer">
+      <mat-card class="permissions-card">
+        <mat-card-header>
+          <mat-card-title>
+            Manage Permissions for {{ selectedCustomer.name }}
+          </mat-card-title>
+          <mat-card-subtitle>{{ selectedCustomer.email }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+              <button mat-raised-button color="primary" (click)="toggleAllAccess(true)">
+                <mat-icon>check_circle</mat-icon>
+                Grant All Access
+              </button>
+              <button mat-raised-button color="warn" (click)="toggleAllAccess(false)">
+                <mat-icon>cancel</mat-icon>
+                Revoke All Access
+              </button>
+            </div>
+          </div>
+
+          <!-- Individual Permissions -->
+          <div class="permission-items">
+            <h3>Individual Portal Access</h3>
+
+            <!-- Accountant Access -->
+            <div class="permission-item">
+              <div class="permission-info">
+                <mat-icon class="permission-icon">account_balance</mat-icon>
+                <div class="permission-details">
+                  <h4>Accountant Portal</h4>
+                  <p>Access to financial reports, invoices, and accounting features</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                [(ngModel)]="selectedCustomer.accountantAccess"
+                color="primary">
+                {{ selectedCustomer.accountantAccess ? 'Enabled' : 'Disabled' }}
+              </mat-slide-toggle>
+            </div>
+
+            <!-- Salesperson Access -->
+            <div class="permission-item">
+              <div class="permission-info">
+                <mat-icon class="permission-icon">storefront</mat-icon>
+                <div class="permission-details">
+                  <h4>Salesperson Portal</h4>
+                  <p>Access to product management, sales, and customer interactions</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                [(ngModel)]="selectedCustomer.salespersonAccess"
+                color="primary">
+                {{ selectedCustomer.salespersonAccess ? 'Enabled' : 'Disabled' }}
+              </mat-slide-toggle>
+            </div>
+
+            <!-- Customer Access -->
+            <div class="permission-item">
+              <div class="permission-info">
+                <mat-icon class="permission-icon">shopping_cart</mat-icon>
+                <div class="permission-details">
+                  <h4>Customer Portal</h4>
+                  <p>Access to personal orders, profile management, and shopping</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                [(ngModel)]="selectedCustomer.customerAccess"
+                color="primary">
+                {{ selectedCustomer.customerAccess ? 'Enabled' : 'Disabled' }}
+              </mat-slide-toggle>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="permissions-summary">
+            <h3>Current Access Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-item" [class.active]="selectedCustomer.accountantAccess">
+                <mat-icon>{{ selectedCustomer.accountantAccess ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Accountant Portal</span>
+              </div>
+              <div class="summary-item" [class.active]="selectedCustomer.salespersonAccess">
+                <mat-icon>{{ selectedCustomer.salespersonAccess ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Salesperson Portal</span>
+              </div>
+              <div class="summary-item" [class.active]="selectedCustomer.customerAccess">
+                <mat-icon>{{ selectedCustomer.customerAccess ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Customer Portal</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="updatePermissions()"
+            [disabled]="saving">
+            <mat-icon *ngIf="!saving">save</mat-icon>
+            <mat-spinner *ngIf="saving" diameter="20"></mat-spinner>
+            {{ saving ? 'Saving...' : 'Save Permissions' }}
+          </button>
+          <button mat-button (click)="selectedCustomer = null">
+            Cancel
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- No Selection State -->
+    <div *ngIf="!selectedCustomer && !loading" class="no-selection">
+      <mat-card class="placeholder-card">
+        <mat-card-content>
+          <div class="placeholder-content">
+            <mat-icon>admin_panel_settings</mat-icon>
+            <h3>Select a Customer</h3>
+            <p>Choose a customer from the list to manage their portal access permissions</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

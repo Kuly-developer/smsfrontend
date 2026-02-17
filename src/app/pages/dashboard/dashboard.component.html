@@ -27,16 +27,6 @@
           <mat-icon>shopping_cart</mat-icon>
           <span class="menu-text">Orders</span>
         </a>
-
-        <a mat-list-item routerLink="/reports" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
-          <mat-icon>analytics</mat-icon>
-          <span class="menu-text">Reports</span>
-        </a>
-
-        <a mat-list-item routerLink="/permissions" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
-          <mat-icon>verified_user</mat-icon>
-          <span class="menu-text">Permissions</span>
-        </a>
       </div>
     </mat-nav-list>
   </mat-sidenav>
@@ -49,10 +39,7 @@
       <span class="toolbar-title">Admin Dashboard</span>
       <span class="spacer"></span>
 
-      <button mat-icon-button class="notification-btn" matTooltip="Notifications">
-        <mat-icon>notifications</mat-icon>
-        <span class="notification-badge">5</span>
-      </button>
+     
 
       <button mat-button class="user-btn" matTooltip="Account Settings">
         <img src="https://i.pravatar.cc/40" alt="avatar" class="avatar" />
@@ -64,54 +51,54 @@
     <div class="dashboard-content">
       <router-outlet></router-outlet>
 
-      <h2>Welcome back, Administrator</h2>
-      <p>Here's your current system overview</p>
+      <!-- Dashboard Home Content -->
+        <h2>Welcome back, Administrator</h2>
+        <p>Here's your current system overview</p>
 
-      <div class="cards-container">
-        <mat-card class="dashboard-card users-card">
-          <mat-card-header>
-            <mat-icon>people_alt</mat-icon>
-            <mat-card-title>Users</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <h3>128</h3>
-            <p>Active users</p>
-          </mat-card-content>
-        </mat-card>
+        <div class="cards-container">
+          <mat-card class="dashboard-card users-card">
+            <mat-card-header>
+              <mat-icon>people_alt</mat-icon>
+              <mat-card-title>Users</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <h3>{{ totalUsers }}</h3>
+              <p>Total users</p>
+            </mat-card-content>
+          </mat-card>
 
-        <mat-card class="dashboard-card orders-card">
-          <mat-card-header>
-            <mat-icon>shopping_cart</mat-icon>
-            <mat-card-title>Orders</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <h3>1,024</h3>
-            <p>Completed this month</p>
-          </mat-card-content>
-        </mat-card>
+          <mat-card class="dashboard-card orders-card">
+            <mat-card-header>
+              <mat-icon>shopping_cart</mat-icon>
+              <mat-card-title>Orders</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <h3>{{ totalOrders }}</h3>
+              <p>Total orders</p>
+            </mat-card-content>
+          </mat-card>
 
-        <mat-card class="dashboard-card revenue-card">
-          <mat-card-header>
-            <mat-icon>attach_money</mat-icon>
-            <mat-card-title>Revenue</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <h3>$45,670</h3>
-            <p>This month</p>
-          </mat-card-content>
-        </mat-card>
+          <mat-card class="dashboard-card revenue-card">
+            <mat-card-header>
+              <mat-icon>attach_money</mat-icon>
+              <mat-card-title>Revenue</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <h3>{{ formatCurrency(totalRevenue) }}</h3>
+              <p>Total revenue</p>
+            </mat-card-content>
+          </mat-card>
 
-        <mat-card class="dashboard-card reports-card">
-          <mat-card-header>
-            <mat-icon>analytics</mat-icon>
-            <mat-card-title>Reports</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <h3>8 new</h3>
-            <p>Reports generated</p>
-          </mat-card-content>
-        </mat-card>
+         
+        </div>
+
+        <div class="refresh-section">
+          <button mat-raised-button color="primary" (click)="loadDashboardStats()" [disabled]="loading">
+            <mat-icon>refresh</mat-icon>
+            {{ loading ? 'Loading...' : 'Refresh Stats' }}
+          </button>
+        </div>
       </div>
-    </div>
+   
   </mat-sidenav-content>
 </mat-sidenav-container>

@@ -80,8 +80,44 @@ export class UserComponent implements OnInit {
     });
   }
 
+  getCurrentUserRole(user: User): string {
+    if (user.role && user.role.name) {
+      return user.role.name;
+    }
+    
+    // Fallback if role object is not populated
+    if (user.roleId && this.roles.length > 0) {
+      const role = this.roles.find(r => r.id === user.roleId);
+      return role ? role.name : 'Unknown Role';
+    }
+    
+    return 'No Role';
+  }
+
+  getRoleBadgeClass(user: User): string {
+    const roleName = this.getCurrentUserRole(user).toLowerCase();
+    switch (roleName) {
+      case 'admin':
+        return 'role-badge-admin';
+      case 'salesperson':
+        return 'role-badge-salesperson';
+      case 'accountant':
+        return 'role-badge-accountant';
+      default:
+        return 'role-badge-default';
+    }
+  }
+
   getAdminUserCount(): number {
-    return this.users.filter(u => u.role?.name.toLowerCase() === 'admin').length;
+    return this.users.filter(user => 
+      this.getCurrentUserRole(user).toLowerCase() === 'admin'
+    ).length;
+  }
+
+  getSalespersonUserCount(): number {
+    return this.users.filter(user => 
+      this.getCurrentUserRole(user).toLowerCase() === 'salesperson'
+    ).length;
   }
 
   onCreateUser(): void {
@@ -123,22 +159,6 @@ export class UserComponent implements OnInit {
     });
   }
 
-  onRoleChange(user: User, newRoleId: string): void {
-    const roleIdNum = +newRoleId;
-    this.userService.updateUserRole(user.id!, roleIdNum).subscribe({
-      next: () => {
-        const foundRole = this.roles.find(r => r.id === roleIdNum);
-        if (foundRole) user.role = foundRole;
-        this.success = "Role updated successfully!";
-        setTimeout(() => this.success = "", 3000);
-      },
-      error: (err: any) => {
-        this.error = `Failed to update role: ${err.error?.error || err.message}`;
-        setTimeout(() => this.error = "", 5000);
-      }
-    });
-  }
-
   onSearch(): void {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
@@ -150,7 +170,7 @@ export class UserComponent implements OnInit {
       user.username.toLowerCase().includes(term) ||
       (user.fullName && user.fullName.toLowerCase().includes(term)) ||
       (user.email && user.email.toLowerCase().includes(term)) ||
-      (user.role && user.role.name.toLowerCase().includes(term))
+      this.getCurrentUserRole(user).toLowerCase().includes(term)
     );
   }
 
@@ -224,7 +244,19 @@ export class UserComponent implements OnInit {
           setTimeout(() => this.success = "", 3000);
         },
         error: (err: any) => {
-          this.error = `Failed to delete user: ${err.error?.error || err.message}`;
+          console.error("Delete user error:", err);
+          
+          // Handle foreign key constraint error
+          const errorMessage = err.message || err.error?.message || err.error?.error || '';
+          
+          if (errorMessage.includes('violates foreign key constraint') || 
+              errorMessage.includes('23503') ||
+              errorMessage.includes('products_salesperson_id_fkey')) {
+            this.error = `Cannot delete user "${user.username}" because they are assigned as a salesperson for products. Please reassign those products first.`;
+          } else {
+            this.error = `Failed to delete user: ${err.error?.error || err.message}`;
+          }
+          
           setTimeout(() => this.error = "", 5000);
         }
       });

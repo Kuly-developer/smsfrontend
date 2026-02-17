@@ -1,0 +1,160 @@
+<div class="orders-admin-container">
+  <!-- Header Section -->
+  <div class="admin-header">
+    <div class="header-content">
+      <h1>📦 Orders Management</h1>
+      <p>Manage and track all customer orders</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="loadOrders()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total-orders">
+      <div class="stat-icon">
+        <mat-icon>shopping_bag</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalOrders }}</div>
+        <div class="stat-label">Total Orders</div>
+      </div>
+    </div>
+
+    <div class="stat-card total-revenue">
+      <div class="stat-icon">
+        <mat-icon>attach_money</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ formatCurrency(totalRevenue) }}</div>
+        <div class="stat-label">Total Revenue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search Orders</mat-label>
+        <input matInput [(ngModel)]="searchTerm" placeholder="Search by ID, customer, or status">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-stroked-button (click)="clearFilters()" class="clear-filters">
+        <mat-icon>clear</mat-icon>
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="table-container">
+    <div class="table-header">
+      <h3>All Orders ({{ filteredOrders.length }})</h3>
+    </div>
+
+    <div *ngIf="!loading && filteredOrders.length === 0" class="empty-state">
+      <mat-icon>inventory_2</mat-icon>
+      <h3>No orders found</h3>
+      <p>No orders match your current filters</p>
+      <button mat-raised-button color="primary" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+
+    <table *ngIf="!loading && filteredOrders.length > 0" class="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer ID</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of filteredOrders" class="order-row">
+          <td class="order-id">#{{ order.id }}</td>
+          <td class="customer-id">{{ order.customerId }}</td>
+          <td class="amount">{{ formatCurrency(order.total) }}</td>
+          <td>{{ order.status }}</td>
+          <td>
+            <button mat-icon-button color="primary" (click)="viewOrderDetails(order)"
+                    matTooltip="View Details">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div *ngIf="selectedOrder" class="order-details-modal">
+    <div class="modal-overlay" (click)="closeOrderDetails()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Order Details - #{{ selectedOrder.order.id }}</h2>
+        <button mat-icon-button (click)="closeOrderDetails()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Order Summary -->
+        <div class="order-summary">
+          <div class="summary-item">
+            <label>Customer ID:</label>
+            <span>{{ selectedOrder.order.customerId }}</span>
+          </div>
+          <div class="summary-item">
+            <label>Total Amount:</label>
+            <span class="amount">{{ formatCurrency(selectedOrder.order.total) }}</span>
+          </div>
+          <div class="summary-item">
+            <label>Status:</label>
+            <span>{{ selectedOrder.order.status }}</span>
+          </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="order-items-section">
+          <h3>Order Items ({{ selectedOrder.items.length }})</h3>
+          <div *ngIf="selectedOrder.items.length === 0" class="no-items">
+            No items found for this order
+          </div>
+          <table *ngIf="selectedOrder.items.length > 0" class="items-table">
+            <thead>
+              <tr>
+                <th>Product ID</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedOrder.items">
+                <td>{{ item.productId }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ formatCurrency(item.price) }}</td>
+                <td>{{ formatCurrency(item.quantity * item.price) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="total-label">Total:</td>
+                <td class="total-amount">{{ formatCurrency(selectedOrder.order.total) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+            
+        
+      </div>
+    </div>
+  </div>
+</div>

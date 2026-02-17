@@ -1,104 +1,127 @@
-/* login.component.scss */
-
-:host {
-  display: block;
-  font-family: 'Amazon Ember', Arial, sans-serif;
-  background-color: #f3f3f3;
+.login-page {
+  position: relative;
   height: 100vh;
-}
-
-/* Header with logo and account icon */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #232f3e;
-  color: white;
-
-  .logo {
-    font-weight: 700;
-    font-size: 1.8rem;
-    cursor: pointer;
-  }
-
-  button {
-    color: white;
-  }
-}
-
-.login-container {
+  background: url('https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1600') 
+              no-repeat center center/cover;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 64px); /* subtract header height */
-  padding: 1rem;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+}
+
+.overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 15, 15, 0.5);
+  backdrop-filter: blur(4px);
+  top: 0;
+  left: 0;
+}
+
+.login-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 450px;
+  padding: 2rem;
 }
 
 .login-box {
-  background: white;
-  padding: 3rem 4rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem;
   width: 100%;
-  max-width: 400px;
   text-align: center;
+  color: white;
+}
 
-  h1 {
-    font-weight: 700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    color: #111;
+.logo-section {
+  margin-bottom: 2rem;
+
+  .logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 1rem;
+    border-radius: 50%;
   }
 
-  .description {
-    font-size: 1rem;
-    margin-bottom: 2rem;
-    color: #555;
-  }
-
-  .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.3rem;
-
-    .form-field {
-      width: 100%;
-    }
-
-    button {
-      padding: 0.8rem 0;
-      font-weight: 700;
-      font-size: 1rem;
-      background-color: #febd69;
-      color: #111;
-      border: none;
-
-      &:hover {
-        background-color: #f3a847;
-      }
-    }
-  }
-
-  .signup-text {
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: #555;
-
-    a {
-      color: #0073bb;
-      font-weight: 600;
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-  }
-
-  .error-message {
-    margin-top: 1rem;
-    color: #b00020;
+  h2 {
+    font-size: 1.6rem;
     font-weight: 600;
+    span {
+      color: #00bcd4;
+    }
   }
+
+  p {
+    font-size: 0.9rem;
+    color: #e0e0e0;
+  }
+}
+
+.form-field {
+  width: 100%;
+  margin-bottom: 1rem;
+
+  mat-label {
+    color: #fff;
+  }
+}
+
+.login-btn {
+  width: 100%;
+  height: 45px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #00bcd4, #3f51b5);
+  color: #fff;
+  border-radius: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(63, 81, 181, 0.4);
+  }
+}
+
+.signup-text {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #eee;
+
+  a {
+    color: #00bcd4;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: fadeIn 1s ease-in-out;
 }

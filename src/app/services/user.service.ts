@@ -59,6 +59,12 @@ export class UserService {
     return this.http.get<User>(`${this.baseUrl}/users/${userId}`).pipe(catchError(this.handleError));
   }
 
+  // Add the missing method
+  checkUserCanBeDeleted(userId: number): Observable<{ canDelete: boolean; reason?: string }> {
+    return this.http.get<{ canDelete: boolean; reason?: string }>(`${this.baseUrl}/users/${userId}/can-delete`)
+      .pipe(catchError(this.handleError));
+  }
+
   private handleError(error: HttpErrorResponse) {
     console.error('HTTP Error:', error);
     return throwError(() => error);

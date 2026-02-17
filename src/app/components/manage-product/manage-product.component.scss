@@ -9,8 +9,23 @@
     justify-content: space-between;
     margin-bottom: 20px;
 
+    .back-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background-color: #545b62;
+      }
+    }
+
     .search-input {
-      width: 80%;
+      width: 60%;
       padding: 10px 15px;
       font-size: 16px;
       border: 1px solid #2d0606;
@@ -46,13 +61,64 @@
     }
   }
 
-  // ✅ ADD THIS HERE: Styling for total product count
+  // Stock Summary Banner
+  .stock-summary-banner {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #6c757d;
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+
+      &.critical {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      &.warning {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+
+      &.normal {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .summary-icon {
+        font-size: 18px;
+      }
+
+      .summary-text {
+        font-size: 14px;
+      }
+    }
+  }
+
+  // Product count with stock alert
   .product-count {
     font-weight: bold;
     margin-bottom: 15px;
     font-size: 1rem;
     text-align: left;
     color: #333;
+
+    .stock-alert-count {
+      color: #dc3545;
+      font-weight: 600;
+    }
   }
 
   .modal {
@@ -99,6 +165,47 @@
             outline: none;
             border-color: #ff9900;
             box-shadow: 0 0 8px #ff9900;
+          }
+
+          // Low stock input warning
+          &.low-stock-input {
+            border-color: #ffc107;
+            background-color: #fff9f7;
+            
+            &:focus {
+              border-color: #ffc107;
+              box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+            }
+          }
+
+          // Critical stock input
+          &.critical-stock-input {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+            
+            &:focus {
+              border-color: #dc3545;
+              box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+            }
+          }
+        }
+
+        .stock-warning-form {
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
+
+          &.critical {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+          }
+
+          &.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
           }
         }
 
@@ -161,6 +268,73 @@
       flex-direction: column;
       align-items: center;
       position: relative;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+
+      // Critical stock styling (Out of Stock)
+      &.critical-stock {
+        border-color: #dc3545;
+        background: linear-gradient(135deg, #ffe6e6, #ffffff);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        order: 1; // Highest priority
+        
+        &:hover {
+          box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+          transform: translateY(-2px);
+        }
+      }
+
+      // Low stock styling (Stock 1-2)
+      &.low-stock {
+        border-color: #ffc107;
+        background: linear-gradient(135deg, #fff9e6, #ffffff);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        order: 2; // Medium priority
+        
+        &:hover {
+          box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
+          transform: translateY(-2px);
+        }
+      }
+
+      // Normal stock styling
+      &.normal-stock {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #e8f5e8, #ffffff);
+        order: 3; // Lowest priority
+        
+        &:hover {
+          box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+          transform: translateY(-2px);
+        }
+      }
+
+      // Stock warning badge
+      .stock-warning-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        animation: pulse 2s infinite;
+        z-index: 2;
+
+        // Critical badge (Out of Stock)
+        &.critical {
+          background: #dc3545;
+        }
+
+        // Warning badge (Low Stock)
+        &:not(.critical) {
+          background: #ffc107;
+          color: #856404;
+        }
+      }
 
       .product-image {
         width: 100%;
@@ -189,8 +363,26 @@
 
         .price-stock {
           font-weight: 700;
-          color: #ff9900;
           margin-bottom: 6px;
+          color: #ff9900;
+
+          .out-of-stock-text {
+            color: #dc3545;
+            font-weight: 800;
+            text-decoration: line-through;
+            animation: blink 1s infinite;
+          }
+
+          .low-stock-text {
+            color: #ff6b35;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+          }
+
+          .normal-stock-text {
+            color: #28a745;
+            font-weight: 700;
+          }
         }
 
         .salesperson {
@@ -240,6 +432,56 @@
           }
         }
       }
+    }
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0.6;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .manage-product-wrapper {
+    padding: 10px;
+    
+    .top-bar {
+      flex-direction: column;
+      gap: 10px;
+      
+      .search-input {
+        width: 100%;
+      }
+    }
+    
+    .stock-summary-banner {
+      flex-direction: column;
+    }
+    
+    .products-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
     }
   }
 }

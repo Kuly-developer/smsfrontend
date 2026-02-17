@@ -1,38 +1,51 @@
 <!-- login.component.html -->
-<header class="app-header">
-  <div class="logo">MyShop</div>
-  <button mat-icon-button aria-label="Account" routerLink="/login">
-    <mat-icon>account_circle</mat-icon>
-  </button>
-</header>
+<div class="login-page">
+  <div class="overlay"></div>
 
-<div class="login-container">
-  <div class="login-box">
-    <h1>Welcome Back to MyShop</h1>
-    <p class="description">
-      Sign in to access your account, manage orders, and enjoy personalized offers.
-    </p>
+  <div class="login-container">
+    <div class="login-box animate-fade">
+      <div class="logo-section">
+        <img src="assets/logo.png" alt="MyShop Logo" class="logo" />
+        <h2>Welcome Back to <span>MyShop</span></h2>
+        <p>Manage your sales, track your progress, and stay connected.</p>
+      </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Username/email</mat-label>
-        <input matInput formControlName="username" required />
-      </mat-form-field>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Username / Email</mat-label>
+          <input matInput formControlName="username" required />
+        </mat-form-field>
 
-      <mat-form-field appearance="fill" class="form-field">
-        <mat-label>Password</mat-label>
-        <input matInput type="password" formControlName="password" required />
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            required
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePasswordVisibility()"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
 
-      <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid">
-        Sign In
-      </button>
-    </form>
+        <button mat-raised-button color="primary" class="login-btn" type="submit" [disabled]="loginForm.invalid">
+          Login
+        </button>
 
-    <p class="signup-text">
-      New to MyShop? <a routerLink="/signup">Create an account</a>
-    </p>
+        <div class="signup-text">
+          <p>
+           
+          </p>
+        </div>
+      </form>
 
-    <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </div>
   </div>
 </div>

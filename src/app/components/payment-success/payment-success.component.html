@@ -1,0 +1,15 @@
+<div *ngIf="processing">
+  <p>⏳ Processing your payment...</p>
+</div>
+
+<div *ngIf="!processing && paid" class="success-page">
+  <h2>✅ Payment Successful</h2>
+  <p>Thank you! Your order has been processed.</p>
+  <button (click)="goDashboard()">Back to Dashboard</button>
+</div>
+
+<div *ngIf="!processing && !paid">
+  <h2>❌ Payment Failed</h2>
+  <p>Your payment could not be verified.</p>
+  <button (click)="goDashboard()">Back to Dashboard</button>
+</div>

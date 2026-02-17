@@ -1,7 +1,10 @@
 <div class="manage-product-wrapper">
-
-  <!-- Top Bar with Search and Add -->
+  <!-- Add Back Button -->
   <div class="top-bar">
+    <button class="back-btn" (click)="goBackToDashboard()">
+      ← Back to Login
+    </button>
+    
     <input
       type="text"
       placeholder="Search products..."
@@ -11,20 +14,39 @@
     />
     <button
       class="add-product-btn"
-      (click)="showAddForm = true"
+      (click)="openAddForm()"
       title="Add Product"
     >
       ＋
     </button>
   </div>
 
+  <!-- Stock Summary Banner -->
+  <div class="stock-summary-banner">
+    <div class="summary-item critical" *ngIf="criticalStockCount > 0">
+      <span class="summary-icon">🔴</span>
+      <span class="summary-text">{{ criticalStockCount }} Out of Stock</span>
+    </div>
+    <div class="summary-item warning" *ngIf="lowStockCount > 0">
+      <span class="summary-icon">🟡</span>
+      <span class="summary-text">{{ lowStockCount }} Low Stock</span>
+    </div>
+    <div class="summary-item normal" *ngIf="criticalStockCount === 0 && lowStockCount === 0">
+      <span class="summary-icon">✅</span>
+      <span class="summary-text">All products well stocked</span>
+    </div>
+  </div>
+
   <!-- Total Products Count -->
   <div class="product-count">
     Total Products: {{ filteredProducts.length }}
+    <span *ngIf="lowStockCount > 0 || criticalStockCount > 0" class="stock-alert-count">
+      ({{ criticalStockCount + lowStockCount }} need attention)
+    </span>
   </div>
 
   <!-- Add/Edit Product Form Modal -->
-  <div class="modal" *ngIf="showAddForm || editing">
+  <div class="modal" *ngIf="showAddForm">
     <div class="modal-content">
       <h2>{{ editing ? 'Edit Product' : 'Add Product' }}</h2>
 
@@ -53,7 +75,17 @@
           placeholder="Stock *"
           required
           autocomplete="off"
+          [class.low-stock-input]="isLowStock(productForm.get('stock')?.value)"
+          [class.critical-stock-input]="isCriticalStock(productForm.get('stock')?.value)"
         />
+        
+        <!-- Stock warning in form -->
+        <div *ngIf="isCriticalStock(productForm.get('stock')?.value)" class="stock-warning-form critical">
+          🚨 CRITICAL: Product is out of stock!
+        </div>
+        <div *ngIf="isLowStock(productForm.get('stock')?.value) && !isCriticalStock(productForm.get('stock')?.value)" class="stock-warning-form warning">
+          ⚠️ Low Stock Warning: Product will be marked as low stock
+        </div>
 
         <!-- File input for image -->
         <input type="file" (change)="onFileSelected($event)" accept="image/*" />
@@ -68,8 +100,7 @@
           <button type="submit">{{ editing ? 'Update' : 'Add' }} Product</button>
           <button
             type="button"
-            (click)="resetForm()"
-            *ngIf="editing || showAddForm"
+            (click)="cancelForm()"
             class="cancel-btn"
           >
             Cancel
@@ -81,14 +112,26 @@
 
   <!-- Products Grid -->
   <div class="products-grid">
-    <div class="product-card" *ngFor="let product of filteredProducts">
+    <div 
+      class="product-card" 
+      *ngFor="let product of filteredProducts"
+      [class.low-stock]="isLowStock(product.stock) && !isCriticalStock(product.stock)"
+      [class.critical-stock]="isCriticalStock(product.stock)"
+      [class.normal-stock]="!isLowStock(product.stock)"
+    >
+      <!-- Stock Warning Badge -->
+      <div *ngIf="isLowStock(product.stock)" class="stock-warning-badge" [class.critical]="isCriticalStock(product.stock)">
+        {{ getStockLevelText(product.stock) }}
+      </div>
+
       <img [src]="product.image_url" [alt]="product.name" class="product-image" />
 
       <div class="product-info">
         <h3>{{ product.name }}</h3>
         <p class="description">{{ product.description }}</p>
         <p class="price-stock">
-          Price: {{ product.price | currency }} | Stock: {{ product.stock }}
+          Price: {{ product.price | currency }} | 
+          <span [class]="getStockClass(product.stock)">Stock: {{ product.stock }}</span>
         </p>
         <p class="salesperson">Salesperson ID: {{ product.salesperson_id }}</p>
       </div>

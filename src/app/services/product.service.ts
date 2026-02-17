@@ -10,17 +10,23 @@ export interface Product {
   stock: number;
   image_url: string;
   salesperson_id: number;
+  salesperson_name?: string;
+  salesperson_email?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-private apiUrl = 'http://localhost:8889/api/products/public';
+  private apiUrl = 'http://localhost:8889/api/products';
 
   constructor(private http: HttpClient) {}
 
   getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.apiUrl);
+    return this.http.get<Product[]>(`${this.apiUrl}/all`);
+  }
+
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/public/${id}`);
   }
 }

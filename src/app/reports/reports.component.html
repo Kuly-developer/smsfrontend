@@ -1,1 +1,86 @@
-<p>reports works!</p>
+<div class="reports-container">
+  <div class="reports-header">
+    <h1>Reports & Analytics</h1>
+    <p>Comprehensive business intelligence and performance metrics</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon color="warn">error_outline</mat-icon>
+          <span>{{ error }}</span>
+          <button mat-raised-button color="primary" (click)="retry()">Retry</button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading && !error" class="loading-spinner">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading reports...</p>
+  </div>
+
+  <!-- Dashboard Stats -->
+  <div class="stats-grid" *ngIf="!loading && !error">
+    <mat-card class="stat-card revenue">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="stat-info">
+          <h3>Total Revenue</h3>
+          <p class="stat-value">${{dashboardStats.totalRevenue | number:'1.2-2'}}</p>
+          <span class="stat-label">All Time</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card orders">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>shopping_cart</mat-icon>
+        </div>
+        <div class="stat-info">
+          <h3>Total Orders</h3>
+          <p class="stat-value">{{dashboardStats.totalOrders || 0}}</p>
+          <span class="stat-label">Completed Orders</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card average">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="stat-info">
+          <h3>Average Payment</h3>
+          <p class="stat-value">${{dashboardStats.averagePayment | number:'1.2-2'}}</p>
+          <span class="stat-label">Per Order</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card customers">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="stat-info">
+          <h3>Total Customers</h3>
+          <p class="stat-value">{{dashboardStats.totalCustomers || 0}}</p>
+          <span class="stat-label">Registered Users</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Rest of your template remains the same -->
+  <!-- Payment Analytics -->
+  <div class="analytics-section" *ngIf="paymentAnalytics.totalPayments && !loading && !error">
+    <!-- ... rest of your existing template ... -->
+  </div>
+</div>

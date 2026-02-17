@@ -18,10 +18,11 @@
   <div *ngIf="showForm" class="customer-form-modal">
     <div class="modal-content">
       <h3 class="modal-title">{{ editMode ? 'Edit Customer' : 'Add New Customer' }}</h3>
+      
       <form [formGroup]="customerForm" (ngSubmit)="onSubmit()" class="seller-form">
         <div class="form-group">
           <label>Name</label>
-          <input formControlName="name" placeholder="John Doe" required />
+          <input formControlName="name" placeholder="John Doe" />
         </div>
         <div class="form-group">
           <label>Email</label>
@@ -43,11 +44,11 @@
         </div>
         <div class="form-group" *ngIf="!editMode && customerForm.get('portalAccess')?.value">
           <label>Password</label>
-          <input formControlName="password" placeholder="••••••••" type="password" required />
+          <input formControlName="password" placeholder="••••••••" type="password" />
         </div>
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" (click)="toggleForm()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="customerForm.invalid">
+          <button type="submit" class="btn btn-primary">
             {{ editMode ? 'Update' : 'Register' }}
           </button>
         </div>
