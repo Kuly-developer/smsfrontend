@@ -40,7 +40,7 @@ export class CustomerManagementComponent implements OnInit {
   loadCustomers() {
     this.isLoading = true;
     this.errorMessage = '';
-    
+
     this.customerService.getAllCustomers().subscribe({
       next: (data) => {
         this.customers = data;
@@ -82,7 +82,7 @@ export class CustomerManagementComponent implements OnInit {
     this.editMode = true;
     this.showForm = true;
     this.editingCustomer = customer;
-    
+
     this.customerForm.patchValue({
       name: customer.name,
       email: customer.email,

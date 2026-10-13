@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 interface Order {
   id: number;
@@ -7,6 +8,7 @@ interface Order {
   total: number;
   status: string;
   hasInvoice?: boolean;
+  customerName?: string;
 }
 
 interface Payment {
@@ -21,6 +23,14 @@ interface Payment {
   amountPaid?: number;
 }
 
+interface Customer {
+  id: number;
+  name: string;
+  email?: string;  // Made optional since we're not using it
+  phone?: string;
+  address?: string;
+}
+
 @Component({
   selector: 'app-accountant',
   templateUrl: './accountant.component.html',
@@ -30,11 +40,20 @@ export class AccountantComponent implements OnInit {
   activeMenu: string = 'invoices';
   orders: Order[] = [];
   payments: Payment[] = [];
+  customers: Map<number, Customer> = new Map();
+
   apiUrl: string = 'http://localhost:8889/api/accountant';
   paymentApiUrl: string = 'http://localhost:8889/api/payment';
-  
+  invoiceApiUrl: string = 'http://localhost:8889/api/invoices';
+  customerApiUrl: string = 'http://localhost:8889/api/customers';
+
   isCreatingInvoice: number | null = null;
   isProcessingAction: boolean = false;
+
+  showEmailModal: boolean = false;  // Kept for compatibility but not used
+  selectedOrder: Order | null = null;  // Kept for compatibility
+  customEmail: string = '';  // Kept for compatibility
+  emailStatus: { success: boolean; message: string } | null = null;  // Kept for compatibility
 
   constructor(private http: HttpClient) {}
 
@@ -46,7 +65,6 @@ export class AccountantComponent implements OnInit {
 
   setActive(menu: string) {
     this.activeMenu = menu;
-
     if (menu === 'invoices') {
       this.loadOrders();
     } else if (menu === 'payments') {
@@ -54,120 +72,140 @@ export class AccountantComponent implements OnInit {
     }
   }
 
-  // Fetch all orders and check for existing invoices
-  loadOrders() {
-    this.http.get<Order[]>(`${this.apiUrl}/orders`).subscribe({
-      next: (res) => {
-        this.orders = res;
-        // Check which orders already have invoices
-        this.checkAllOrdersForInvoices();
-      },
-      error: (err) => {
-        console.error('Failed to fetch orders:', err);
-        this.orders = [];
-        alert('Failed to load orders from server');
-      }
-    });
+  // ============== LOAD DATA ==============
+
+  async loadOrders() {
+    this.isProcessingAction = true;
+
+    try {
+      // First, fetch orders
+      const orders = await firstValueFrom(this.http.get<Order[]>(`${this.apiUrl}/orders`));
+      this.orders = orders || [];
+      console.log('Orders loaded:', this.orders);
+
+      // Clear existing customers
+      this.customers.clear();
+
+      // Then load customers for all orders
+      await this.loadAllCustomers();
+
+      // Update orders with customer info
+      this.updateOrdersWithCustomerInfo();
+
+      // Check for invoices
+      await this.checkAllOrdersForInvoices();
+
+      console.log('Final orders with customer data:', this.orders);
+      console.log('Customers map:', Array.from(this.customers.entries()));
+
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      this.orders = [];
+      alert('Failed to load orders from server');
+    } finally {
+      this.isProcessingAction = false;
+    }
   }
 
-  // Check all orders for existing invoices
-  checkAllOrdersForInvoices() {
-    const checkPromises = this.orders.map(order => 
-      this.checkOrderHasInvoice(order)
-    );
+  async loadAllCustomers() {
+    const uniqueCustomerIds = [...new Set(this.orders.map(o => o.customerId))];
 
-    // Wait for all invoice checks to complete
-    Promise.all(checkPromises).then(() => {
-      console.log('All invoice checks completed');
-    });
-  }
+    if (uniqueCustomerIds.length === 0) {
+      return;
+    }
 
-  // Check if a specific order has an invoice
-  checkOrderHasInvoice(order: Order): Promise<void> {
-    return new Promise((resolve) => {
-      this.http.get(`${this.apiUrl}/invoices/order/${order.id}`).subscribe({
-        next: (invoice: any) => {
-          // If invoice exists for this order, mark it
-          if (invoice && invoice.id) {
-            order.hasInvoice = true;
-            console.log(`Order ${order.id} has existing invoice`);
-          } else {
-            order.hasInvoice = false;
-          }
-          resolve();
-        },
-        error: (err) => {
-          // If 404, no invoice exists
-          if (err.status === 404) {
-            order.hasInvoice = false;
-          } else {
-            console.error('Error checking invoice for order:', order.id, err);
-            // On error, assume no invoice to be safe
-            order.hasInvoice = false;
-          }
-          resolve();
+    console.log('Loading customers for IDs:', uniqueCustomerIds);
+
+    const promises = uniqueCustomerIds.map(async (customerId) => {
+      try {
+        const customer = await firstValueFrom(
+          this.http.get<Customer>(`${this.customerApiUrl}/${customerId}`)
+        );
+
+        if (customer) {
+          this.customers.set(customerId, customer);
+          console.log(`Customer ${customerId} loaded:`, customer);
         }
-      });
+      } catch (error) {
+        console.error(`Failed to load customer ${customerId}:`, error);
+      }
     });
+
+    await Promise.all(promises);
   }
 
-  // Alternative method: Load orders with invoices in one API call
-  loadOrdersWithInvoices() {
-    this.http.get<Order[]>(`${this.apiUrl}/orders`).subscribe({
-      next: (orders) => {
-        // First set all orders without invoices
-        this.orders = orders.map(order => ({
+  updateOrdersWithCustomerInfo() {
+    this.orders = this.orders.map(order => {
+      const customer = this.customers.get(order.customerId);
+      if (customer) {
+        return {
           ...order,
-          hasInvoice: false
-        }));
-
-        // Then get all invoices and mark orders that have them
-        this.http.get<any[]>(`${this.apiUrl}/invoices`).subscribe({
-          next: (invoices) => {
-            const ordersWithInvoices = new Set(
-              invoices.map(invoice => invoice.orderId)
-            );
-            
-            this.orders = this.orders.map(order => ({
-              ...order,
-              hasInvoice: ordersWithInvoices.has(order.id)
-            }));
-          },
-          error: (err) => {
-            console.error('Failed to load invoices:', err);
-            // If we can't load invoices, keep orders as is (no invoices)
-          }
-        });
-      },
-      error: (err) => {
-        console.error('Failed to fetch orders:', err);
-        this.orders = [];
-        alert('Failed to load orders from server');
+          customerName: customer.name
+        };
       }
+      return order;
     });
   }
 
-  // Fetch all payments
-  loadPayments() {
-    this.http.get<Payment[]>(`${this.paymentApiUrl}/payments`).subscribe({
-      next: (res) => {
-        this.payments = res;
-        console.log('Payments loaded:', this.payments);
-      },
-      error: (err) => {
-        console.error('Failed to fetch payments:', err);
-        this.payments = [];
-        alert('Failed to load payments from server');
-      }
-    });
+  async checkAllOrdersForInvoices() {
+    const promises = this.orders.map(order => this.checkOrderHasInvoice(order));
+    await Promise.all(promises);
   }
 
-  // Create invoice for a specific order
-  createInvoice(order: Order, event?: Event) {
+  async checkOrderHasInvoice(order: Order): Promise<void> {
+    try {
+      const invoice = await firstValueFrom(
+        this.http.get(`${this.apiUrl}/invoices/order/${order.id}`)
+      ) as any;
+      order.hasInvoice = !!(invoice && invoice.id);
+    } catch (error: any) {
+      // 404 is expected - order has no invoice
+      order.hasInvoice = false;
+    }
+  }
+
+  async loadPayments() {
+    this.isProcessingAction = true;
+
+    try {
+      const payments = await firstValueFrom(
+        this.http.get<Payment[]>(`${this.paymentApiUrl}/payments`)
+      );
+      this.payments = payments || [];
+      console.log('Payments loaded:', this.payments);
+    } catch (error) {
+      console.error('Failed to fetch payments:', error);
+      this.payments = [];
+      alert('Failed to load payments from server');
+    } finally {
+      this.isProcessingAction = false;
+    }
+  }
+
+  // ============== HELPER METHODS FOR CUSTOMER DATA ==============
+
+  getCustomerEmail(customerId: number): string {
+    // Removed email functionality - returns empty string
+    return '';
+  }
+
+  getCustomerName(customerId: number): string {
+    const order = this.orders.find(o => o.customerId === customerId);
+    if (order?.customerName) {
+      return order.customerName;
+    }
+
+    const customer = this.customers.get(customerId);
+    return customer?.name || `Customer ${customerId}`;
+  }
+
+  // ============== INVOICE CREATION ==============
+
+  async createInvoice(order: Order, event?: Event) {
     if (event) {
       event.stopPropagation();
     }
-    
+
     if (this.isCreatingInvoice || this.isProcessingAction || order.hasInvoice) {
       return;
     }
@@ -179,93 +217,128 @@ export class AccountantComponent implements OnInit {
     this.isCreatingInvoice = order.id;
     this.isProcessingAction = true;
 
-    const invoiceNumber = 'INV-' + new Date().getTime();
-    
-    this.http.post(`${this.apiUrl}/invoices`, {
-      orderId: order.id,
-      invoiceNumber,
-      total: order.total
-    }).subscribe({
-      next: (res: any) => {
-        alert(`Invoice created successfully! ID: ${res.invoiceId}`);
-        
-        // Mark order as having an invoice
+    const invoiceNumber = 'INV-' + new Date().getTime() + '-' + order.id;
+
+    try {
+      const res: any = await firstValueFrom(
+        this.http.post(`${this.apiUrl}/invoices`, {
+          orderId: order.id,
+          invoiceNumber,
+          total: order.total
+        })
+      );
+
+      alert(`✅ Invoice created successfully! ID: ${res.invoiceId}`);
+      order.hasInvoice = true;
+
+    } catch (error: any) {
+      console.error('Failed to create invoice:', error);
+
+      if (error.status === 409) {
+        alert('Invoice already exists for this order.');
         order.hasInvoice = true;
-        
-        console.log(`Invoice created for order ${order.id}, hasInvoice set to:`, order.hasInvoice);
-      },
-      error: (err) => {
-        console.error('Failed to create invoice:', err);
-        
-        if (err.status === 409) {
-          alert('Invoice already exists for this order.');
-          order.hasInvoice = true;
-        } else {
-          alert('Failed to create invoice');
-        }
-      },
-      complete: () => {
-        this.isCreatingInvoice = null;
-        this.isProcessingAction = false;
+      } else {
+        alert('Failed to create invoice: ' + (error.error?.message || error.message));
       }
-    });
+    } finally {
+      this.isCreatingInvoice = null;
+      this.isProcessingAction = false;
+    }
   }
 
-  // Delete order
-  deleteOrder(order: Order, event?: Event) {
+  // ============== EMAIL SENDING METHODS (REMOVED/STUBBED) ==============
+
+  async sendInvoiceToCustomer(orderId: number, email: string): Promise<void> {
+    // Stubbed - does nothing
+    console.log('Email functionality removed');
+    return;
+  }
+
+  openEmailModal(order: Order, event?: Event) {
+    // Stubbed - does nothing
+    console.log('Email functionality removed');
+    return;
+  }
+
+  closeEmailModal() {
+    // Stubbed - does nothing
+    return;
+  }
+
+  async sendToCustomEmail() {
+    // Stubbed - does nothing
+    console.log('Email functionality removed');
+    return;
+  }
+
+  async resendInvoice(order: Order, event?: Event) {
+    // Stubbed - does nothing
+    console.log('Email functionality removed');
+    return;
+  }
+
+  private isValidEmail(email: string): boolean {
+    // Stubbed - always returns false
+    return false;
+  }
+
+  // ============== ORDER MANAGEMENT ==============
+
+  async deleteOrder(order: Order, event?: Event) {
     if (event) {
       event.stopPropagation();
     }
-    
+
     if (this.isProcessingAction) {
       return;
     }
 
-    if (!confirm(`#${order.id}`)) {
+    if (!confirm(`Are you sure you want to delete Order #${order.id}?`)) {
       return;
     }
 
     this.isProcessingAction = true;
 
-    this.http.delete(`http://localhost:8889/api/orders/${order.id}`).subscribe({
-      next: () => {
-        alert(`Order #${order.id} deleted successfully`);
-        this.loadOrders();
-      },
-      error: (err) => {
-        console.error('Failed to delete order:', err);
-        
-        if (err.status === 404) {
-          alert('Order not found. It may have already been deleted.');
-        } else if (err.status === 409) {
-          alert('Cannot delete order because it has associated payments or invoices. Please delete those first.');
-        } else {
-          alert('Failed to delete order. Please try again.');
-        }
-      },
-      complete: () => {
-        this.isProcessingAction = false;
+    try {
+      await firstValueFrom(
+        this.http.delete(`http://localhost:8889/api/orders/${order.id}`)
+      );
+
+      alert(`✅ Order #${order.id} deleted successfully`);
+      await this.loadOrders();
+
+    } catch (error: any) {
+      console.error('Failed to delete order:', error);
+
+      if (error.status === 404) {
+        alert('Order not found. It may have already been deleted.');
+      } else if (error.status === 409) {
+        alert('Cannot delete order because it has associated payments or invoices. Please delete those first.');
+      } else {
+        alert('Failed to delete order. Please try again.');
       }
-    });
+    } finally {
+      this.isProcessingAction = false;
+    }
   }
 
-  // Get payment status badge class
+  // ============== PAYMENT METHODS ==============
+
   getPaymentStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
       case 'paid':
       case 'completed':
-        return 'status-paid';
+        return 'paid';
       case 'pending':
-        return 'status-pending';
+        return 'pending';
       case 'failed':
       case 'cancelled':
-        return 'status-cancelled';
+        return 'cancelled';
       default:
-        return 'status-pending';
+        return 'pending';
     }
   }
 
-  // Format date
   formatDate(dateString: string): string {
     try {
       return new Date(dateString).toLocaleDateString('en-US', {
@@ -280,40 +353,37 @@ export class AccountantComponent implements OnInit {
     }
   }
 
-  // Calculate total revenue
   getTotalRevenue(): number {
     return this.payments
       .filter(p => p.paid)
       .reduce((sum, payment) => sum + (payment.amountPaid || payment.amount), 0);
   }
 
-  // Count completed payments
   getCompletedPayments(): number {
     return this.payments.filter(p => p.paid).length;
   }
 
-  // Count pending payments
   getPendingPayments(): number {
     return this.payments.filter(p => !p.paid).length;
   }
 
-  // View payment details
   viewPaymentDetails(payment: Payment, event?: Event) {
     if (event) {
       event.stopPropagation();
     }
 
+    const customerName = this.getCustomerName(payment.customerId);
+
     const details = `
 Payment Details:
 ────────────────
 Order ID: ${payment.orderId}
-Customer ID: ${payment.customerId}
+Customer: ${customerName}
 Amount: $${payment.amount}
 Amount Paid: $${payment.amountPaid || payment.amount}
 Status: ${payment.paid ? 'Paid' : (payment.status || 'Pending')}
 Session ID: ${payment.sessionId || 'N/A'}
 Date: ${this.formatDate(payment.createdAt)}
-Paid: ${payment.paid ? 'Yes' : 'No'}
     `;
 
     alert(details);

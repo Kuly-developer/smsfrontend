@@ -18,7 +18,7 @@
   <div *ngIf="showForm" class="customer-form-modal">
     <div class="modal-content">
       <h3 class="modal-title">{{ editMode ? 'Edit Customer' : 'Add New Customer' }}</h3>
-      
+
       <form [formGroup]="customerForm" (ngSubmit)="onSubmit()" class="seller-form">
         <div class="form-group">
           <label>Name</label>

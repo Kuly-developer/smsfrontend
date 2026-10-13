@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { CartItem } from '../models/cart-item.model';
 
@@ -52,39 +52,38 @@ export class CartService {
     return this.http.delete(`${this.apiUrl}/cart/${cartItemId}`);
   }
 
-  // Clear entire cart - FIXED ENDPOINT
+  // Clear entire cart
   clearCart(): Observable<any> {
     const customerId = this.authService.getCustomerId();
     if (!customerId) {
-      // FIX: Return proper Observable with next() call
       return new Observable(observer => {
-        observer.next({}); // Provide empty object as value
+        observer.next({});
         observer.complete();
       });
     }
 
     console.log('🗑️ Clearing cart for customer:', customerId);
-    // FIX: Changed from /cart/clear/:customerId to /cart/customer/:customerId
     return this.http.delete(`${this.apiUrl}/cart/customer/${customerId}`);
   }
 
   // Clear local cart state immediately
   clearLocalCart(): void {
     console.log('🗑️ Clearing local cart state');
-    this.cartSubject.next([]); // This is correct - empty array
+    this.cartSubject.next([]);
   }
 
-  // Calculate total - FIXED: Handle possible undefined price
+  // FIXED: Calculate total correctly
   calculateTotal(): number {
     const cartItems = this.cartSubject.value;
     return cartItems.reduce((total, item) => {
-      const price = item.price || 0; // Handle undefined price
+      const price = item.price || 0;
       const quantity = item.quantity || 1;
+      // Return price * quantity for each item
       return total + (price * quantity);
     }, 0);
   }
 
-  // Get item count - FIXED: Handle possible undefined quantity
+  // Get item count
   getItemCount(): number {
     const cartItems = this.cartSubject.value;
     return cartItems.reduce((count, item) => {

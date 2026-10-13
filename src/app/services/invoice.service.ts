@@ -20,14 +20,17 @@ export class InvoiceService {
 
   constructor(private http: HttpClient) {}
 
+  // Get all invoices for a customer
   getInvoicesByCustomer(customerId: number): Observable<Invoice[]> {
     return this.http.get<Invoice[]>(`${this.apiUrl}/${customerId}`);
   }
 
+  // Delete an invoice
   deleteInvoice(invoiceId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${invoiceId}`);
   }
 
+  // Print invoice in a new window
   printInvoice(invoice: Invoice): void {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -40,6 +43,7 @@ export class InvoiceService {
     }
   }
 
+  // Generate invoice HTML for printing
   private generateInvoiceHTML(invoice: Invoice): string {
     return `
       <!DOCTYPE html>
@@ -126,9 +130,12 @@ export class InvoiceService {
               <span>$${invoice.total.toFixed(2)}</span>
             </div>
             <div class="detail-row">
+              <span>Subtotal</span>
               <span>$${invoice.total.toFixed(2)}</span>
             </div>
             <div class="detail-row">
+              <span>Tax (0%)</span>
+              <span>$0.00</span>
             </div>
           </div>
 
@@ -138,7 +145,7 @@ export class InvoiceService {
 
           <div class="footer">
             <p>Thank you for your business!</p>
-            <p>If you have any questions about this invoice, please contact us +251974496613.</p>
+            <p>If you have any questions about this invoice, please contact us at +251974496613</p>
           </div>
 
           <div class="no-print" style="margin-top: 20px; text-align: center;">
@@ -152,5 +159,92 @@ export class InvoiceService {
         </body>
       </html>
     `;
+  }
+
+  // ============== NEW EMAIL METHODS ==============
+
+  /**
+   * Create a new invoice and automatically send it to customer's email
+   * @param orderId - The order ID
+   * @param invoiceNumber - Generated invoice number
+   * @param total - Total amount
+   * @returns Observable with the response
+   */
+  createInvoice(orderId: number, invoiceNumber: string, total: number): Observable<any> {
+    const payload = {
+      orderId: orderId,
+      invoiceNumber: invoiceNumber,
+      total: total
+    };
+    
+    console.log('📝 Creating invoice with payload:', payload);
+    return this.http.post(`http://localhost:8889/api/invoices`, payload);
+  }
+
+  /**
+   * Resend an existing invoice to customer's email
+   * @param invoiceId - The invoice ID to resend
+   * @returns Observable with the response
+   */
+  resendInvoiceEmail(invoiceId: number): Observable<any> {
+    console.log('📧 Resending invoice email for ID:', invoiceId);
+    return this.http.post(`http://localhost:8889/api/invoices/${invoiceId}/resend`, {});
+  }
+
+  /**
+   * Check if customer has email (helper method)
+   * @param invoice - The invoice object
+   * @returns boolean indicating if customer has email
+   */
+  hasCustomerEmail(invoice: Invoice): boolean {
+    return !!(invoice.customer_email && invoice.customer_email.trim() !== '');
+  }
+
+  /**
+   * Download invoice as PDF (if you want to add this feature)
+   * @param invoiceId - The invoice ID to download
+   * @returns Observable with blob data
+   */
+  downloadInvoicePDF(invoiceId: number): Observable<Blob> {
+    return this.http.get(`http://localhost:8889/api/invoices/${invoiceId}/download`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * Send invoice to a specific email (if you want manual email entry)
+   * @param invoiceId - The invoice ID
+   * @param email - Custom email address
+   * @returns Observable with the response
+   */
+  sendInvoiceToCustomEmail(invoiceId: number, email: string): Observable<any> {
+    return this.http.post(`http://localhost:8889/api/invoices/${invoiceId}/send?email=${encodeURIComponent(email)}`, {});
+  }
+
+  /**
+   * Get invoice by ID (if needed)
+   * @param invoiceId - The invoice ID
+   * @returns Observable with invoice details
+   */
+  getInvoiceById(invoiceId: number): Observable<Invoice> {
+    return this.http.get<Invoice>(`http://localhost:8889/api/invoices/details/${invoiceId}`);
+  }
+
+  /**
+   * Get all invoices (admin feature)
+   * @returns Observable with list of all invoices
+   */
+  getAllInvoices(): Observable<Invoice[]> {
+    return this.http.get<Invoice[]>('http://localhost:8889/api/invoices/admin/all');
+  }
+
+  /**
+   * Get invoices by date range
+   * @param startDate - Start date
+   * @param endDate - End date
+   * @returns Observable with filtered invoices
+   */
+  getInvoicesByDateRange(startDate: string, endDate: string): Observable<Invoice[]> {
+    return this.http.get<Invoice[]>(`http://localhost:8889/api/invoices/range?start=${startDate}&end=${endDate}`);
   }
 }

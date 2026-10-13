@@ -2,52 +2,63 @@
   <!-- Header -->
   <header class="header">
     <div class="left-section">
-      <!-- 🔙 Back to Login Button -->
       <button class="back-btn" (click)="goBackToLogin()">⬅ Back</button>
       <div class="logo">MyShop</div>
     </div>
 
     <div class="search-bar">
-      <input
-        type="text"
-        placeholder="Search products..."
-        [(ngModel)]="searchTerm"
-        (keyup.enter)="onSearch()"
-      />
+      <input type="text" placeholder="Search products..." [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" />
       <button (click)="onSearch()">🔍</button>
     </div>
 
     <div class="header-right">
-      <!-- Invoice Button -->
-      <div class="invoice" (click)="goToInvoice()">
-        🧾 Invoice
-      </div>
-
+      <div class="invoice" (click)="goToInvoice()">🧾 Invoice</div>
       <div class="profile"></div>
-      <div class="cart" (click)="toggleCart()">
-        🛒 Cart <span class="cart-count">{{ cart.length }}</span>
-      </div>
+      <div class="cart" (click)="toggleCart()">🛒 Cart <span class="cart-count">{{ cart.length }}</span></div>
     </div>
   </header>
 
+  <!-- Category Filter -->
+  <div class="category-filter">
+    <label for="categorySelect" class="filter-label">Filter by Category:</label>
+    <select id="categorySelect" (change)="filterByCategory($event)">
+      <option value="">All Categories</option>
+      <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+    </select>
+  </div>
+
+  <!-- Products Grid -->
   <main class="main-content">
-    <!-- Products Grid -->
     <div class="products-grid">
       <div *ngFor="let product of filteredProducts" class="product-card">
-        <img [src]="product.image_url" alt="{{ product.name }}" />
+        <img [src]="product.image_url" alt="{{ product.name }}">
         <h3>{{ product.name }}</h3>
+
+        <!-- Category Badge - Added here -->
+        <div class="product-category" *ngIf="product.category_name">
+          <span class="category-badge">{{ product.category_name }}</span>
+        </div>
+        <div class="product-category" *ngIf="!product.category_name && product.category_id">
+          <span class="category-badge">{{ getCategoryName(product.category_id) }}</span>
+        </div>
+
         <p class="desc">{{ product.description }}</p>
         <p class="price">Price: {{ product.price | currency }}</p>
         <p class="stock" [class.out-of-stock]="product.stock === 0">
           {{ product.stock === 0 ? 'Out of Stock' : 'Stock: ' + product.stock }}
         </p>
-
-        <button 
-          (click)="addToCart(product)" 
+        <button
+          (click)="addToCart(product)"
           [disabled]="product.stock === 0"
-          [class.disabled]="product.stock === 0">
+          [class.disabled]="product.stock === 0"
+        >
           {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
         </button>
+      </div>
+
+      <!-- Empty State for no products -->
+      <div *ngIf="filteredProducts.length === 0" class="no-products-message">
+        <p>No products found matching your criteria.</p>
       </div>
     </div>
 
@@ -59,21 +70,19 @@
       </div>
       <ul *ngIf="cart.length > 0">
         <li *ngFor="let item of cart">
-          <img [src]="item.image_url" alt="{{ item.name }}" />
+          <img [src]="item.image_url" alt="{{ item.name }}">
           <div class="item-details">
             <h4>{{ item.name }}</h4>
             <p>{{ item.price | currency }}</p>
             <div class="quantity-controls">
               <button (click)="decreaseQuantity(item)">-</button>
               <span>{{ item.quantity }}</span>
-              <button 
-                (click)="increaseQuantity(item)" 
+              <button
+                (click)="increaseQuantity(item)"
                 [disabled]="isMaxQuantityReached(item)"
-                [class.disabled]="isMaxQuantityReached(item)">
-                +
-              </button>
+                [class.disabled]="isMaxQuantityReached(item)"
+              >+</button>
             </div>
-            <!-- Show max quantity warning -->
             <div *ngIf="isMaxQuantityReached(item)" class="max-quantity-warning">
               Max quantity reached (Stock: {{ getProductStock(item.productId) }})
             </div>
@@ -83,47 +92,42 @@
       </ul>
       <div class="checkout-section" *ngIf="cart.length > 0">
         <p class="total">Total: {{ totalPayment | currency }}</p>
-        <button (click)="checkout()" [disabled]="cart.length === 0 || isProcessing">
+        <button
+          (click)="checkout()"
+          [disabled]="cart.length === 0 || isProcessing"
+        >
           {{ isProcessing ? 'Processing...' : 'Proceed to Checkout' }}
         </button>
       </div>
     </div>
   </main>
 
-  <!-- Payment Status Modal -->
+  <!-- Payment Modal -->
   <div class="modal-overlay" *ngIf="showPaymentModal">
     <div class="modal payment-modal">
       <div class="modal-header">
         <h3>Payment Status</h3>
         <button class="close-btn" (click)="closeModal()" *ngIf="paymentStatus !== 'processing'">×</button>
       </div>
-      
+
       <div class="modal-body">
-        <!-- Processing -->
         <div *ngIf="paymentStatus === 'processing'" class="status processing">
           <div class="spinner"></div>
           <h4>Processing Your Payment</h4>
-          <p>Please wait while we verify your payment...</p>
+          <p>Please wait...</p>
         </div>
-        
-        <!-- Success -->
         <div *ngIf="paymentStatus === 'success'" class="status success">
           <div class="icon">✅</div>
           <h4>Payment Successful!</h4>
-          <p>Thank you for your purchase! Your cart has been cleared.</p>
-          <p>You can view your invoices in the Invoice section.</p>
+          <p>Thank you! Your cart has been cleared.</p>
           <button class="btn-primary" (click)="closeModal()">Continue Shopping</button>
         </div>
-        
-        <!-- Failed -->
         <div *ngIf="paymentStatus === 'failed'" class="status failed">
           <div class="icon">❌</div>
           <h4>Payment Failed</h4>
-          <p>We couldn't verify your payment. Please try again.</p>
-          <div class="action-buttons">
-            <button class="btn-primary" (click)="closeModal()">Try Again</button>
-            <button class="btn-secondary" (click)="forceClearCart()">Clear Cart</button>
-          </div>
+          <p>We couldn't verify your payment.</p>
+          <button class="btn-primary" (click)="closeModal()">Try Again</button>
+          <button class="btn-secondary" (click)="forceClearCart()">Clear Cart</button>
         </div>
       </div>
     </div>

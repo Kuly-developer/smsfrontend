@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription, interval } from 'rxjs';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 interface Product {
   id: number;
@@ -11,6 +12,11 @@ interface Product {
   stock: number;
   image_url: string;
   salesperson_id: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
 }
 
 @Component({
@@ -27,17 +33,28 @@ export class SalespersonComponent implements OnInit, OnDestroy {
   private stockCheckSubscription: Subscription | null = null;
   private countdownSubscription: Subscription | null = null;
 
+  categories: Category[] = [];  // <-- Added categories array
+  form: FormGroup;               // <-- Reactive form for category filter
+
   // Get the logged-in salesperson ID (you need to implement this properly)
   loggedInSalespersonId: number = this.getSalespersonId();
 
   constructor(
     private router: Router,
-    private http: HttpClient
-  ) {}
+    private http: HttpClient,
+    private fb: FormBuilder
+  ) {
+    this.form = this.fb.group({
+      categoryId: ['']  // Default value
+    });
+  }
 
   ngOnInit(): void {
     console.log('🔄 Salesperson Dashboard Initialized');
     console.log('👤 Salesperson ID:', this.loggedInSalespersonId);
+
+    this.loadCategories(); // <-- Load categories
+
     this.checkLowStock();
     
     // Start countdown for automatic navigation
@@ -47,49 +64,76 @@ export class SalespersonComponent implements OnInit, OnDestroy {
     this.stockCheckSubscription = interval(30000).subscribe(() => {
       this.checkLowStock();
     });
-  }
 
-  ngOnDestroy(): void {
-    if (this.stockCheckSubscription) {
-      this.stockCheckSubscription.unsubscribe();
-    }
-    if (this.countdownSubscription) {
-      this.countdownSubscription.unsubscribe();
-    }
-  }
-
-  startCountdown() {
-    this.countdownSubscription = interval(1000).subscribe(() => {
-      this.countdown--;
-      
-      if (this.countdown <= 0) {
-        this.navigateToManageProduct();
-      }
+    // Optional: React to category changes
+    this.form.get('categoryId')?.valueChanges.subscribe(categoryId => {
+      console.log('Selected Category ID:', categoryId);
+      // You can call a method to filter products by category here
+      this.filterProductsByCategory(categoryId);
     });
   }
 
-  // Navigate immediately without waiting for countdown
+  ngOnDestroy(): void {
+    if (this.stockCheckSubscription) this.stockCheckSubscription.unsubscribe();
+    if (this.countdownSubscription) this.countdownSubscription.unsubscribe();
+  }
+
+  // ---------- Categories ----------
+  loadCategories() {
+    this.http.get<Category[]>('http://localhost:8080/api/categories')
+      .subscribe({
+        next: data => {
+          this.categories = data;
+          console.log('📦 Categories loaded:', this.categories);
+        },
+        error: err => {
+          console.error('❌ Failed to load categories:', err);
+        }
+      });
+  }
+
+  filterProductsByCategory(categoryId: string) {
+    if (!categoryId) {
+      // Reset or load all products
+      this.checkLowStock();
+      return;
+    }
+
+    this.http.get<Product[]>(`${this.apiUrl}/products/category/${categoryId}`)
+      .subscribe({
+        next: products => {
+          console.log('Filtered products by category:', products);
+          this.lowStockProducts = products.filter(p => p.stock <= 2);
+          this.lowStockCount = this.lowStockProducts.length;
+        },
+        error: err => {
+          console.error('❌ Failed to load products by category:', err);
+        }
+      });
+  }
+
+  // ---------- Countdown ----------
+  startCountdown() {
+    this.countdownSubscription = interval(1000).subscribe(() => {
+      this.countdown--;
+      if (this.countdown <= 0) this.navigateToManageProduct();
+    });
+  }
+
   navigateNow() {
     this.navigateToManageProduct();
   }
 
-  // Method to get salesperson ID (you need to implement this based on your auth system)
+  // ---------- Auth ----------
   getSalespersonId(): number {
-    // TODO: Replace with your actual authentication logic
-    // This could come from:
-    // - Auth service
-    // - Local storage
-    // - Session storage
-    // - JWT token
-    
-    // For now, using a hardcoded value for testing
-    return 123; // Replace with actual salesperson ID from your auth system
+    // TODO: Replace with actual authentication logic
+    return 123; // Hardcoded for now
   }
 
+  // ---------- Low Stock ----------
   checkLowStock() {
     console.log('🔍 Checking low stock for salesperson:', this.loggedInSalespersonId);
-    
-    // Try different endpoints to find products
+
     const endpoints = [
       `${this.apiUrl}/products/salesperson/${this.loggedInSalespersonId}`,
       `${this.apiUrl}/products/public`,
@@ -110,24 +154,9 @@ export class SalespersonComponent implements OnInit, OnDestroy {
       this.http.get<Product[]>(endpoint).subscribe({
         next: (products) => {
           console.log('✅ Products fetched successfully:', products);
-          
-          // Filter products that belong to this salesperson AND have low stock
-          this.lowStockProducts = products.filter(product => {
-            const isOwnProduct = product.salesperson_id === this.loggedInSalespersonId;
-            const isLowStock = product.stock <= 2;
-            
-            if (isOwnProduct && isLowStock) {
-              console.log(`📦 Low stock product found: ${product.name} (Stock: ${product.stock})`);
-            }
-            
-            return isOwnProduct && isLowStock;
-          });
-          
+          this.lowStockProducts = products.filter(product => product.salesperson_id === this.loggedInSalespersonId && product.stock <= 2);
           this.lowStockCount = this.lowStockProducts.length;
-          console.log('📊 Final low stock count:', this.lowStockCount);
-          console.log('📦 Low stock products:', this.lowStockProducts);
-          
-          // Auto-show alert if there are low stock items
+
           if (this.lowStockCount > 0 && !this.showAlert) {
             this.showAlert = true;
             this.showBrowserNotification();

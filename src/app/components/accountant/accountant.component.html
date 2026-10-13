@@ -1,7 +1,9 @@
 <div class="dashboard-container">
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="logo">Accountant</div>
+    <div class="logo">
+      <i class="fas fa-calculator"></i> Accountant
+    </div>
     <nav>
       <ul>
         <li [class.active]="activeMenu === 'invoices'" (click)="setActive('invoices')">
@@ -12,13 +14,23 @@
         </li>
       </ul>
     </nav>
+    <div class="sidebar-footer">
+      <i class="fas fa-shield-alt"></i> secure · v.24
+    </div>
   </aside>
 
   <!-- Main Content -->
   <main class="main-content">
     <!-- Invoices / Orders -->
     <div *ngIf="activeMenu === 'invoices'" class="orders-container">
-      <h2>📑 Orders & Invoices</h2>
+      <div class="header-section">
+        <h2>
+          <i class="fas fa-file-invoice"></i> Orders & Invoices
+        </h2>
+        <button class="btn btn-refresh" (click)="loadOrders()" [disabled]="isProcessingAction">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isProcessingAction"></i> Refresh
+        </button>
+      </div>
 
       <div class="table-wrapper">
         <table class="orders-table">
@@ -33,40 +45,51 @@
           </thead>
           <tbody>
             <tr *ngIf="orders.length === 0">
-              <td colspan="5" class="empty-state">No orders found 🚫</td>
+              <td colspan="5" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No orders found</p>
+              </td>
             </tr>
             <tr *ngFor="let order of orders">
-              <td>{{ order.id }}</td>
-              <td>{{ order.customerId }}</td>
-              <td>{{ order.total | currency }}</td>
+              <td>#{{ order.id }}</td>
+              <td>{{ getCustomerName(order.customerId) }}</td>
+              <td class="amount">{{ order.total | currency }}</td>
               <td>
                 <span class="status" [ngClass]="order.status.toLowerCase()">
                   {{ order.status }}
                 </span>
               </td>
-              <td class="actions">
-                <!-- Updated Create Invoice Button -->
-                <button 
-                  class="btn" 
-                  [class.btn-create]="!order.hasInvoice"
-                  [class.btn-inactive]="order.hasInvoice"
-                  (click)="createInvoice(order, $event)"
-                  [disabled]="isCreatingInvoice === order.id || order.hasInvoice"
-                >
-                  <span *ngIf="isCreatingInvoice === order.id">
-                    <i class="fas fa-spinner fa-spin"></i> Creating...
-                  </span>
-                  <span *ngIf="isCreatingInvoice !== order.id && !order.hasInvoice">
-                    <i class="fas fa-plus-circle"></i> Create Invoice
-                  </span>
-                  <span *ngIf="order.hasInvoice">
-                    <i class="fas fa-check-circle"></i> Invoice Created
-                  </span>
-                </button>
-                
-                <button class="btn btn-delete" (click)="deleteOrder(order, $event)">
-                  <i class="fas fa-trash-alt"></i> Delete Order
-                </button>
+              <td class="actions-column">
+                <div class="action-buttons-container">
+                  <!-- Create Invoice Button -->
+                  <button
+                    *ngIf="!order.hasInvoice"
+                    class="action-btn create-btn"
+                    (click)="createInvoice(order, $event)"
+                    [disabled]="isCreatingInvoice === order.id || isProcessingAction"
+                  >
+                    <i class="fas fa-plus-circle"></i>
+                    <span *ngIf="isCreatingInvoice === order.id">Creating...</span>
+                    <span *ngIf="isCreatingInvoice !== order.id">Create</span>
+                  </button>
+
+                  <button
+                    *ngIf="order.hasInvoice"
+                    class="action-btn inactive-btn"
+                    disabled
+                  >
+                    <i class="fas fa-check-circle"></i> Created
+                  </button>
+
+                  <!-- Delete Order Button -->
+                  <button
+                    class="action-btn delete-btn"
+                    (click)="deleteOrder(order, $event)"
+                    [disabled]="isProcessingAction"
+                  >
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -74,12 +97,14 @@
       </div>
     </div>
 
-    <!-- Payments Tab (unchanged) -->
+    <!-- Payments Tab -->
     <div *ngIf="activeMenu === 'payments'" class="payments-container">
       <div class="header-section">
-        <h2>💰 Track Payments</h2>
-        <button class="btn btn-refresh" (click)="loadPayments()">
-          <i class="fas fa-sync-alt"></i> Refresh
+        <h2>
+          <i class="fas fa-money-check-alt"></i> Track Payments
+        </h2>
+        <button class="btn btn-refresh" (click)="loadPayments()" [disabled]="isProcessingAction">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isProcessingAction"></i> Refresh
         </button>
       </div>
 
@@ -104,36 +129,46 @@
             <tr>
               <th>Payment ID</th>
               <th>Order ID</th>
-              <th>Customer ID</th>
+              <th>Customer</th>
               <th>Amount</th>
               <th>Status</th>
               <th>Session ID</th>
               <th>Date</th>
-              <th>Actions</th>
+              <th class="actions-header">A/C</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="payments.length === 0">
-              <td colspan="8" class="empty-state">No payments found 🚫</td>
+              <td colspan="8" class="empty-state">
+                <i class="fas fa-credit-card"></i>
+                <p>No payments found</p>
+              </td>
             </tr>
             <tr *ngFor="let payment of payments">
-              <td>{{ payment.id }}</td>
+              <td>#{{ payment.id }}</td>
               <td>#{{ payment.orderId }}</td>
-              <td>{{ payment.customerId }}</td>
-              <td>{{ payment.amount | currency }}</td>
+              <td>{{ getCustomerName(payment.customerId) }}</td>
+              <td class="amount">{{ payment.amount | currency }}</td>
               <td>
                 <span class="status" [ngClass]="getPaymentStatusClass(payment.status)">
                   {{ payment.paid ? 'Paid' : (payment.status || 'Pending') }}
                 </span>
               </td>
-              <td class="session-id">
+              <td class="session-id" [title]="payment.sessionId || 'No session ID'">
                 {{ payment.sessionId ? (payment.sessionId.substring(0, 8) + '...') : 'N/A' }}
               </td>
-              <td>{{ formatDate(payment.createdAt) }}</td>
-              <td class="actions">
-                <button class="btn btn-view" (click)="viewPaymentDetails(payment, $event)">
-                  <i class="fas fa-eye"></i> Details
-                </button>
+              <td class="date-cell">{{ formatDate(payment.createdAt) }}</td>
+              <td class="actions-column">
+                <div class="action-buttons-container">
+                  <button
+                    class="action-btn details-btn"
+                    (click)="viewPaymentDetails(payment, $event)"
+                    title="View payment details"
+                  >
+                    <i class="fas fa-eye"></i>
+                    <span>Details</span>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -141,4 +176,10 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" *ngIf="isProcessingAction">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Processing...</div>
 </div>

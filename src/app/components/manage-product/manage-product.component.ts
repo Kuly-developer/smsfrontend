@@ -1,48 +1,53 @@
 import { Component, OnInit } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Product } from 'src/app/models/product1.model';
+import { Category } from 'src/app/models/category.model';
 import { Product1Service } from 'src/app/services/product1.service';
+import { CategoryService } from 'src/app/services/category.service';
 
 @Component({
   selector: 'app-manage-product',
   templateUrl: './manage-product.component.html',
-  styleUrls: ['./manage-product.component.scss'],
+  styleUrls: ['./manage-product.component.scss']
 })
 export class ManageProductComponent implements OnInit {
+
   products: Product[] = [];
   filteredProducts: Product[] = [];
+  categories: Category[] = [];
+
   productForm!: FormGroup;
 
-  editing = false;
+  editing: boolean = false;
   selectedProductId?: number;
 
   imageFile?: File;
   imagePreview?: string;
 
   searchTerm: string = '';
+  selectedCategoryId: number | null = null;
   showAddForm: boolean = false;
+
   lowStockCount: number = 0;
   criticalStockCount: number = 0;
 
-  // Example logged-in salesperson ID (replace with real auth logic)
-  loggedInSalespersonId: number = 123;
+  loggedInSalespersonId: number = 123; // example, replace with actual
 
   constructor(
     private fb: FormBuilder,
     private product1Service: Product1Service,
+    private categoryService: CategoryService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.initForm();
     this.loadProducts();
+    this.loadCategories();
   }
 
+  // ---------------- Form Initialization ----------------
   initForm(): void {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
@@ -50,74 +55,70 @@ export class ManageProductComponent implements OnInit {
       price: [0, Validators.required],
       stock: [0, Validators.required],
       image_url: [''],
+      category_id: [null, Validators.required] // required category
     });
   }
 
+  // ---------------- Load Data ----------------
   loadProducts(): void {
-    this.product1Service
-      .getAll(this.loggedInSalespersonId)
+    this.product1Service.getAll(this.loggedInSalespersonId)
       .subscribe((data: Product[]) => {
-        this.products = data;
-        this.filteredProducts = [...data]; // Initialize filteredProducts
-        this.sortProductsByStock();
-        this.updateStockCounts();
-        console.log('📦 Products loaded:', this.products.length);
-        console.log('🔍 Filtered products:', this.filteredProducts.length);
+        this.products = data || [];
+        this.applyFilters();
       });
   }
 
+  loadCategories(): void {
+    this.categoryService.getAll()
+      .subscribe((data: Category[]) => {
+        this.categories = data || [];
+      });
+  }
+
+  // ---------------- Filtering ----------------
   filterProducts(): void {
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
     const term = this.searchTerm.toLowerCase().trim();
-    if (!term) {
-      this.filteredProducts = [...this.products];
-    } else {
-      this.filteredProducts = this.products.filter((p) =>
-        p.name.toLowerCase().includes(term)
-      );
-    }
+
+    this.filteredProducts = this.products.filter((p: Product) => {
+      const matchesName = p.name?.toLowerCase().includes(term);
+      const matchesCategory = this.selectedCategoryId != null
+        ? p.category_id === this.selectedCategoryId
+        : true;
+      return matchesName && matchesCategory;
+    });
+
     this.sortProductsByStock();
     this.updateStockCounts();
   }
 
-  // Sort products: critical stock first, then low stock, then normal stock
+  // ---------------- Stock Sorting & Counts ----------------
   sortProductsByStock(): void {
-    this.filteredProducts.sort((a, b) => {
+    this.filteredProducts.sort((a: Product, b: Product) => {
       const priorityA = this.getStockPriority(a.stock);
       const priorityB = this.getStockPriority(b.stock);
-      
-      // First sort by stock priority (critical first)
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-      
-      // Then sort by name alphabetically
+
+      if (priorityA !== priorityB) return priorityA - priorityB;
       return a.name.localeCompare(b.name);
     });
   }
 
   updateStockCounts(): void {
-    this.lowStockCount = this.filteredProducts.filter(product => 
-      product.stock > 0 && product.stock <= 2
-    ).length;
-    
-    this.criticalStockCount = this.filteredProducts.filter(product => 
-      product.stock === 0
-    ).length;
-    
-    console.log('📊 Stock counts - Critical:', this.criticalStockCount, 'Low:', this.lowStockCount);
+    this.lowStockCount = this.filteredProducts.filter(p => p.stock > 0 && p.stock <= 2).length;
+    this.criticalStockCount = this.filteredProducts.filter(p => p.stock === 0).length;
   }
 
-  // Check if stock is low (≤ 2)
   isLowStock(stock: number): boolean {
-    return stock <= 2;
+    return stock <= 2 && stock > 0;
   }
 
-  // Check if stock is critical (0)
   isCriticalStock(stock: number): boolean {
     return stock === 0;
   }
 
-  // Get stock level text
   getStockLevelText(stock: number): string {
     if (stock === 0) return 'OUT OF STOCK';
     if (stock === 1) return 'VERY LOW';
@@ -125,21 +126,28 @@ export class ManageProductComponent implements OnInit {
     return '';
   }
 
-  // Get CSS class for stock display
   getStockClass(stock: number): string {
     if (stock === 0) return 'out-of-stock-text';
     if (stock <= 2) return 'low-stock-text';
     return 'normal-stock-text';
   }
 
-  // Get priority level for sorting (lower number = higher priority)
   getStockPriority(stock: number): number {
-    if (stock === 0) return 1; // Highest priority - Critical
-    if (stock === 1) return 2; // High priority - Very Low
-    if (stock === 2) return 3; // Medium priority - Low
-    return 4; // Normal priority - Normal stock
+    if (stock === 0) return 1;
+    if (stock === 1) return 2;
+    if (stock === 2) return 3;
+    return 4;
   }
 
+  // ---------------- Category ----------------
+  getCategoryName(categoryId?: number | string): string {
+    if (categoryId === undefined || categoryId === null) return 'Unknown';
+    const id = typeof categoryId === 'string' ? Number(categoryId) : categoryId;
+    const cat = this.categories.find(c => c.id === id);
+    return cat ? cat.name : 'Unknown';
+  }
+
+  // ---------------- Form Actions ----------------
   openAddForm(): void {
     this.resetForm();
     this.showAddForm = true;
@@ -151,9 +159,7 @@ export class ManageProductComponent implements OnInit {
     this.resetForm();
   }
 
-  // Updated method to navigate to login page
   goBackToDashboard(): void {
-    console.log('🔐 Navigating to login page');
     this.router.navigate(['/login']);
   }
 
@@ -161,7 +167,6 @@ export class ManageProductComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.imageFile = input.files[0];
-
       const reader = new FileReader();
       reader.onload = () => {
         this.imagePreview = reader.result as string;
@@ -175,37 +180,40 @@ export class ManageProductComponent implements OnInit {
     if (this.productForm.invalid) return;
 
     const formValue = this.productForm.value;
-
     const product: Product = {
       ...formValue,
       salesperson_id: this.loggedInSalespersonId,
+      category_id: Number(formValue.category_id) // ensure number
     };
 
     if (this.editing && this.selectedProductId != null) {
-      this.product1Service
-        .update(this.selectedProductId, product)
+      this.product1Service.update(this.selectedProductId, product)
         .subscribe(() => {
           this.loadProducts();
           this.cancelForm();
         });
     } else {
-      this.product1Service.create(product).subscribe(() => {
-        this.loadProducts();
-        this.cancelForm();
-      });
+      this.product1Service.create(product)
+        .subscribe(() => {
+          this.loadProducts();
+          this.cancelForm();
+        });
     }
   }
 
   editProduct(product: Product): void {
     this.editing = true;
     this.selectedProductId = product.id;
+
     this.productForm.patchValue({
       name: product.name,
       description: product.description,
       price: product.price,
       stock: product.stock,
-      image_url: product.image_url
+      image_url: product.image_url,
+      category_id: product.category_id || null
     });
+
     this.imagePreview = product.image_url;
     this.showAddForm = true;
   }
@@ -225,4 +233,5 @@ export class ManageProductComponent implements OnInit {
     this.imagePreview = undefined;
     this.imageFile = undefined;
   }
+
 }
